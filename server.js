@@ -215,15 +215,11 @@ async function runFetch() {
 
 // ==================== Cron Job ====================
 
-// Run every 10 minutes
+// Run every 10 minutes (silent - only sends Telegram if new apartments found)
 cron.schedule("*/10 * * * *", async () => {
   console.log("⏰ 10-minute cron job triggered");
   try {
-    await telegram.sendMessage("🔄 <b>تم إرسال طلب للسيرفر... جاري البحث عن شقق جديدة</b>");
-    const result = await runFetch();
-    if (result.newCount === 0) {
-      await telegram.sendMessage("✅ <b>لا توجد شقق جديدة</b>\n\nتم فحص " + result.totalFound + " شقة من جميع المواقع.");
-    }
+    await runFetch();
   } catch (err) {
     console.error("Cron fetch error:", err);
   }
@@ -279,8 +275,29 @@ async function start() {
   // Setup Telegram bot commands
   telegram.setCommandHandler(async (text) => {
     try {
+      // افحص / check - manual server + apartments check
+      if (text === "افحص" || text === "/افحص" || text === "/check") {
+        await telegram.sendMessage("🔄 <b>تم إرسال طلب للسيرفر... جاري الفحص</b>");
+        const apts = db.getAllApartments();
+        const newCount = apts.filter(a => a.isNew).length;
+        const history = db.getFetchHistory();
+        const uptime = Math.round(process.uptime());
+        const hours = Math.floor(uptime / 3600);
+        const mins = Math.floor((uptime % 3600) / 60);
+        let msg = `🟢 <b>حالة السيرفر:</b> يعمل \n`;
+        msg += `⏱ مدة التشغيل: ${hours}س ${mins}د\n`;
+        msg += `🏠 الشقق: ${apts.length} | جديدة: ${newCount}\n`;
+        if (history.last) msg += `⏰ آخر فحص: ${history.last.fetchedAt}\n`;
+        msg += `\n🔍 <b>جاري البحث عن شقق جديدة...</b>`;
+        await telegram.sendMessage(msg);
+        const result = await runFetch();
+        if (result.newCount > 0) {
+          // Notifications already sent by runFetch
+        } else {
+          await telegram.sendMessage(`✅ <b>لا توجد شقق جديدة</b>\nتم فحص ${result.totalFound} شقة من جميع المواقع.`);
+        }
       // جديد / search
-      if (text === "جديد" || text === "/جديد" || text === "بحث" || text === "/start" || text === "/search" || text === "/new") {
+      } else if (text === "جديد" || text === "/جديد" || text === "بحث" || text === "/start" || text === "/search" || text === "/new") {
         await telegram.sendMessage("🔄 <b>جاري البحث عن شقق جديدة...</b>");
         const result = await runFetch();
         if (result.newCount > 0) {
@@ -359,16 +376,17 @@ async function start() {
       } else if (text === "مساعدة" || text === "/مساعدة" || text === "/help" || text === "help") {
         await telegram.sendMessage(
           `🤖 <b>أوامر البوت:</b>\n\n` +
+          `🟢 /check - افحص حال السيرفر + بحث عن جديد\n` +
           `🔍 /start - بحث عن شقق جديدة\n` +
           `📋 /all - عرض جميع الشقق\n` +
           `💰 /cheap - شقق أقل من 800€\n` +
           `⭐ /fav - الشقق المفضلة\n` +
           `📊 /status - إحصائيات\n` +
-          `🕐 /latest - آخر 5 شقق\n` +
+          `🕰 /latest - آخر 5 شقق\n` +
           `❓ /help - هذه القائمة\n\n` +
           `<b>أو اكتب بالعربي:</b>\n` +
-          `جديد | الكل | رخيصة | مفضلة | احصائيات | آخر\n\n` +
-          `🔄 البحث التلقائي كل 10 دقائق مفعّل\n` +
+          `افحص | جديد | الكل | رخيصة | مفضلة | احصائيات | آخر\n\n` +
+          `🔄 بحث تلقائي صامت كل 10 دقائق (يرسل بس إذا في جديد)\n` +
           `📋 تقرير كل ساعة على التلغرام`
         );
       }
