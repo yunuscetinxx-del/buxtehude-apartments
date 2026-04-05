@@ -157,10 +157,35 @@ async function runFetch() {
 
 // ==================== Cron Job ====================
 
-// Run every hour
-cron.schedule("0 * * * *", () => {
-  console.log("⏰ Hourly cron job triggered");
+// Run every 10 minutes
+cron.schedule("*/10 * * * *", () => {
+  console.log("⏰ 10-minute cron job triggered");
   runFetch().catch((err) => console.error("Cron fetch error:", err));
+});
+
+// Hourly report to Telegram
+cron.schedule("0 * * * *", async () => {
+  try {
+    const apts = db.getAllApartments();
+    const newCount = apts.filter((a) => a.isNew).length;
+    const history = db.getFetchHistory();
+    const prices = apts.filter((a) => a.price > 0).map((a) => a.price);
+    const avg = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
+
+    let msg = `📋 <b>تقرير الساعة</b>\n\n`;
+    msg += `🏠 المجموع: ${apts.length} شقة\n`;
+    if (newCount > 0) {
+      msg += `🆕 <b>جديدة: ${newCount} شقة!</b>\n`;
+    } else {
+      msg += `✅ لا توجد شقق جديدة\n`;
+    }
+    msg += `💰 متوسط السعر: ${avg}€\n`;
+    if (history.last) msg += `⏰ آخر فحص: ${history.last.fetchedAt}`;
+    await telegram.sendMessage(msg);
+    console.log("📋 Hourly report sent to Telegram");
+  } catch (err) {
+    console.error("Hourly report error:", err.message);
+  }
 });
 
 // ==================== Start Server ====================
@@ -262,7 +287,8 @@ async function start() {
           `❓ /help - هذه القائمة\n\n` +
           `<b>أو اكتب بالعربي:</b>\n` +
           `جديد | الكل | رخيصة | مفضلة | احصائيات | آخر\n\n` +
-          `🔄 البحث التلقائي كل ساعة مفعّل`
+          `🔄 البحث التلقائي كل 10 دقائق مفعّل\n` +
+          `📋 تقرير كل ساعة على التلغرام`
         );
       }
     } catch (err) {
@@ -275,7 +301,7 @@ async function start() {
 
   app.listen(PORT, async () => {
     console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-    console.log("📅 Hourly scraping is active (every hour at :00)");
+    console.log("📅 Scraping every 10 minutes + hourly Telegram report");
     console.log("🌐 Frontend served at root /\n");
 
     // Keep-alive: self-ping every 10 minutes to prevent Render from sleeping
