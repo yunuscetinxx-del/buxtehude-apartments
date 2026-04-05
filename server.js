@@ -278,20 +278,6 @@ async function start() {
     console.log("📅 Hourly scraping is active (every hour at :00)");
     console.log("🌐 Frontend served at root /\n");
 
-    // Send startup message to Telegram with commands menu
-    await telegram.sendMessage(
-      `🟢 <b>السيرفر يعمل!</b>\n\n` +
-      `🤖 <b>الأوامر المتاحة:</b>\n\n` +
-      `▫️ <b>جديد</b> - بحث عن شقق جديدة الآن\n` +
-      `▫️ <b>الكل</b> - عرض جميع الشقق\n` +
-      `▫️ <b>رخيصة</b> - شقق أقل من 800€\n` +
-      `▫️ <b>مفضلة</b> - الشقق المفضلة\n` +
-      `▫️ <b>احصائيات</b> - إحصائيات سريعة\n` +
-      `▫️ <b>مساعدة</b> - عرض الأوامر\n\n` +
-      `🔄 البحث التلقائي كل ساعة مفعّل\n` +
-      `🌐 الواجهة: http://localhost:${PORT}`
-    );
-
     // Keep-alive: self-ping every 10 minutes to prevent Render from sleeping
     const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
     if (RENDER_URL) {
@@ -305,20 +291,7 @@ async function start() {
         }
       }, 10 * 60 * 1000); // every 10 minutes
 
-      // Telegram heartbeat every 10 minutes
-      setInterval(async () => {
-        try {
-          const apts = db.getAllApartments();
-          const uptime = Math.round(process.uptime() / 60);
-          await telegram.sendMessage(
-            `💓 <b>السيرفر شغال</b> | ⏱ ${uptime} دقيقة | 🏠 ${apts.length} شقة`
-          );
-        } catch (err) {
-          console.log(`⚠ Heartbeat message failed: ${err.message}`);
-        }
-      }, 10 * 60 * 1000); // every 10 minutes
-
-      console.log("💓 Keep-alive enabled (ping + Telegram every 10 min)");
+      console.log("💓 Keep-alive enabled (self-ping every 10 min)");
     }
 
     // Run initial fetch on start
