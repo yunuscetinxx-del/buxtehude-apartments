@@ -320,8 +320,15 @@ async function scrapeMarktDe() {
 
         if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
 
+        // Validate area: card text or title must mention our areas
+        if (!isValidArea(allText) && !isValidArea(title)) return;
         // Reject listings mentioning other cities in title
         if (titleHasForeignLocation(title)) return;
+
+        // Try to extract real address from card text
+        const addressMatch = allText.match(/\b(\d{5})\s+([A-ZÄÖÜa-zäöüß][\w\s-]+)/);
+        const realAddress = addressMatch ? `${addressMatch[1]} ${addressMatch[2].trim()}` : `${area.zip} ${area.name}`;
+        const detectedArea = detectArea(allText + ' ' + title) || area.name;
 
         // Extract published date (format: DD.MM.YYYY)
         const dateMatch = allText.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
@@ -333,13 +340,13 @@ async function scrapeMarktDe() {
         results.push({
           externalId: `marktde-${id}`,
           title,
-          address: `${area.zip} ${area.name}`,
+          address: realAddress,
           price,
           rooms: roomsMatch ? parseNumber(roomsMatch[1]) : null,
           size: sizeMatch ? parseNumber(sizeMatch[1]) : null,
           source: "markt.de",
           url: fullUrl,
-          area: area.name,
+          area: detectedArea,
           publishedAt,
           ...features,
         });
