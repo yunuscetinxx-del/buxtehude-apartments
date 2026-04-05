@@ -60,252 +60,60 @@ function detectFeatures(text) {
   };
 }
 
-// ==================== ImmoScout24 ====================
-async function scrapeImmoScout24() {
-  const url =
-    "https://www.immobilienscout24.de/Suche/de/niedersachsen/stade-kreis/buxtehude/wohnung-mieten?enteredFrom=result_list";
-  console.log("  📡 ImmoScout24...");
-  const html = await fetchPage(url);
-  if (!html) return [];
-
-  const $ = cheerio.load(html);
-  const results = [];
-
-  $('article[data-item="result"], li.result-list__listing').each((_, el) => {
-    try {
-      const $el = $(el);
-      const titleEl = $el.find(
-        'h2 a, [data-go-to-expose-id], .result-list-entry__brand-title, a[title]'
-      );
-      const title =
-        titleEl.text().trim() ||
-        $el.find("h5, h2").first().text().trim() ||
-        "Wohnung in Buxtehude";
-
-      const link = titleEl.attr("href") || $el.find("a").first().attr("href");
-      const fullUrl = link
-        ? link.startsWith("http")
-          ? link
-          : `https://www.immobilienscout24.de${link}`
-        : "";
-
-      const id =
-        $el.attr("data-go-to-expose-id") ||
-        $el.attr("data-id") ||
-        (link && link.match(/\/(\d+)/) ? link.match(/\/(\d+)/)[1] : "");
-
-      const priceText = $el
-        .find(
-          '[data-is24-qa="is24qa-kaltmiete"], .result-list-entry__primary-criterion:first-child dd, .result-list-entry__criteria dd'
-        )
-        .first()
-        .text();
-      const price = parsePrice(priceText);
-
-      const sizeText = $el
-        .find(
-          '[data-is24-qa="is24qa-wohnflaeche"], .result-list-entry__primary-criterion:nth-child(2) dd'
-        )
-        .text();
-      const roomsText = $el
-        .find(
-          '[data-is24-qa="is24qa-zi"], .result-list-entry__primary-criterion:nth-child(3) dd'
-        )
-        .text();
-
-      const address = $el
-        .find(
-          ".result-list-entry__address, [data-is24-qa='is24qa-entryAddress']"
-        )
-        .text()
-        .trim();
-
-      const allText = $el.text();
-      const features = detectFeatures(allText);
-
-      if (id && title) {
-        results.push({
-          externalId: `immoscout24-${id}`,
-          title,
-          address: address || "Buxtehude",
-          price,
-          rooms: parseNumber(roomsText),
-          size: parseNumber(sizeText),
-          source: "ImmoScout24",
-          url: fullUrl,
-          ...features,
-        });
-      }
-    } catch (e) {
-      /* skip bad entries */
-    }
-  });
-
-  // Also try JSON-LD or script data
-  try {
-    const scriptContent = $('script[type="application/json"]').text();
-    if (scriptContent) {
-      const jsonData = JSON.parse(scriptContent);
-      // Try to extract from IS24 JSON format
-      const items =
-        jsonData?.searchResponseModel?.["resultlist.resultlist"]?.[
-          "resultlistEntries"
-        ]?.[0]?.["resultlistEntry"] || [];
-      for (const item of items) {
-        const data = item?.["resultlist.realEstate"];
-        if (!data) continue;
-        const id = data.id || item["@id"];
-        const existsAlready = results.some(
-          (r) => r.externalId === `immoscout24-${id}`
-        );
-        if (existsAlready) continue;
-
-        const allText = JSON.stringify(data);
-        results.push({
-          externalId: `immoscout24-${id}`,
-          title: data.title || "Wohnung in Buxtehude",
-          address:
-            data.address?.description?.text ||
-            [data.address?.street, data.address?.city].filter(Boolean).join(", ") ||
-            "Buxtehude",
-          price: data.price?.value || 0,
-          rooms: data.numberOfRooms || null,
-          size: data.livingSpace || null,
-          source: "ImmoScout24",
-          url: `https://www.immobilienscout24.de/expose/${id}`,
-          ...detectFeatures(allText),
-        });
-      }
-    }
-  } catch (e) {
-    /* JSON parsing failed, that's ok */
-  }
-
-  console.log(`    ✅ ImmoScout24: ${results.length} listings`);
-  return results;
-}
-
-// ==================== Immowelt ====================
-async function scrapeImmowelt() {
-  const url =
-    "https://www.immowelt.de/suche/buxtehude/wohnungen/mieten";
-  console.log("  📡 Immowelt...");
-  const html = await fetchPage(url);
-  if (!html) return [];
-
-  const $ = cheerio.load(html);
-  const results = [];
-
-  $(
-    '[data-test="search-result-listitem"], .EstateItem, .listitem_wrap, div[class*="EstateItem"]'
-  ).each((_, el) => {
-    try {
-      const $el = $(el);
-      const titleEl = $el.find("h2, [data-test='title'], a[title]").first();
-      const title = titleEl.text().trim() || "Wohnung in Buxtehude";
-
-      const link = $el.find("a").first().attr("href");
-      const fullUrl = link
-        ? link.startsWith("http")
-          ? link
-          : `https://www.immowelt.de${link}`
-        : "";
-
-      const idMatch = fullUrl.match(/\/(\w+)$/);
-      const id = idMatch ? idMatch[1] : "";
-
-      const priceText = $el
-        .find('[data-test="price"], .price_value, .hardfact:first-child')
-        .first()
-        .text();
-      const price = parsePrice(priceText);
-
-      const details = $el.find(
-        ".hardfact, .hardfacts span, [data-test*='area'], [data-test*='rooms']"
-      );
-      let rooms = null,
-        size = null;
-      details.each((__, d) => {
-        const t = $(d).text();
-        if (/zimmer|zi\./i.test(t)) rooms = parseNumber(t);
-        else if (/m²/i.test(t)) size = parseNumber(t);
-      });
-
-      const address = $el
-        .find('[data-test="location"], .location, .listlocation')
-        .text()
-        .trim();
-      const features = detectFeatures($el.text());
-
-      if (id && title) {
-        results.push({
-          externalId: `immowelt-${id}`,
-          title,
-          address: address || "Buxtehude",
-          price,
-          rooms,
-          size,
-          source: "Immowelt",
-          url: fullUrl,
-          ...features,
-        });
-      }
-    } catch (e) {
-      /* skip */
-    }
-  });
-
-  console.log(`    ✅ Immowelt: ${results.length} listings`);
-  return results;
-}
-
 // ==================== Kleinanzeigen ====================
 async function scrapeKleinanzeigen() {
-  const url =
-    "https://www.kleinanzeigen.de/s-wohnung-mieten/buxtehude/c203l3322";
   console.log("  📡 Kleinanzeigen...");
-  const html = await fetchPage(url);
-  if (!html) return [];
-
-  const $ = cheerio.load(html);
   const results = [];
+  const seenIds = new Set();
 
-  $("article.aditem, .ad-listitem, li.ad-listitem").each((_, el) => {
-    try {
-      const $el = $(el);
-      const titleEl = $el.find("a.ellipsis, h2 a, .aditem-main--middle--title a").first();
-      const title = titleEl.text().trim() || "Wohnung in Buxtehude";
+  // Scrape pages 1-2 for more results
+  for (let page = 1; page <= 2; page++) {
+    const url = page === 1
+      ? "https://www.kleinanzeigen.de/s-wohnung-mieten/buxtehude/c203l3322"
+      : `https://www.kleinanzeigen.de/s-wohnung-mieten/buxtehude/seite:${page}/c203l3322`;
 
-      const link = titleEl.attr("href") || $el.find("a").first().attr("href");
-      const fullUrl = link
-        ? link.startsWith("http")
-          ? link
-          : `https://www.kleinanzeigen.de${link}`
-        : "";
+    const html = await fetchPage(url);
+    if (!html) break;
 
-      const id = $el.attr("data-adid") || $el.attr("data-id") || "";
-      const priceText = $el
-        .find(".aditem-main--middle--price-shipping--price, .aditem-main--middle--price, .price-shipping--price")
-        .first()
-        .text();
-      const price = parsePrice(priceText);
+    const $ = cheerio.load(html);
+    let pageCount = 0;
 
-      const address = $el
-        .find(".aditem-main--top--left, .aditem-details--location")
-        .text()
-        .trim();
+    $("article.aditem, .ad-listitem, li.ad-listitem").each((_, el) => {
+      try {
+        const $el = $(el);
+        const titleEl = $el.find("a.ellipsis, h2 a, .aditem-main--middle--title a").first();
+        const title = titleEl.text().trim() || "Wohnung in Buxtehude";
 
-      const descText = $el.text();
-      const features = detectFeatures(descText);
+        const link = titleEl.attr("href") || $el.find("a").first().attr("href");
+        const fullUrl = link
+          ? link.startsWith("http")
+            ? link
+            : `https://www.kleinanzeigen.de${link}`
+          : "";
 
-      // Try to extract rooms/size from description
-      const roomsMatch = descText.match(/([\d,]+)\s*(?:zimmer|zi\.?|räume)/i);
-      const sizeMatch = descText.match(/([\d,]+)\s*m²/i);
+        const id = $el.attr("data-adid") || $el.attr("data-id") || "";
+        if (!id || seenIds.has(id)) return;
+        seenIds.add(id);
 
-      // Skip if it looks like WG
-      if (/\bwg\b|wohngemeinschaft|mitbewohner/i.test(descText)) return;
+        const priceText = $el
+          .find(".aditem-main--middle--price-shipping--price, .aditem-main--middle--price, .price-shipping--price")
+          .first()
+          .text();
+        const price = parsePrice(priceText);
 
-      if (id) {
+        const address = $el
+          .find(".aditem-main--top--left, .aditem-details--location")
+          .text()
+          .trim();
+
+        const descText = $el.text();
+        const features = detectFeatures(descText);
+
+        const roomsMatch = descText.match(/([\d,]+)\s*(?:zimmer|zi\.?|räume)/i);
+        const sizeMatch = descText.match(/([\d,]+)\s*m²/i);
+
+        if (/\bwg\b|wohngemeinschaft|mitbewohner/i.test(descText)) return;
+
         results.push({
           externalId: `kleinanzeigen-${id}`,
           title,
@@ -317,11 +125,14 @@ async function scrapeKleinanzeigen() {
           url: fullUrl,
           ...features,
         });
+        pageCount++;
+      } catch (e) {
+        /* skip */
       }
-    } catch (e) {
-      /* skip */
-    }
-  });
+    });
+
+    if (pageCount === 0) break; // No more results
+  }
 
   console.log(`    ✅ Kleinanzeigen: ${results.length} listings`);
   return results;
@@ -385,72 +196,6 @@ async function scrapeWohnungsboerse() {
   });
 
   console.log(`    ✅ Wohnungsbörse: ${results.length} listings`);
-  return results;
-}
-
-// ==================== ohne-makler.net ====================
-async function scrapeOhneMakler() {
-  const url =
-    "https://www.ohne-makler.net/immobiliensuche/?marketing_type=miete&property_type=wohnung&city=Buxtehude";
-  console.log("  📡 ohne-makler.net...");
-  const html = await fetchPage(url);
-  if (!html) return [];
-
-  const $ = cheerio.load(html);
-  const results = [];
-
-  $(".property-listing, .listing-item, article, .property, .result-item").each(
-    (_, el) => {
-      try {
-        const $el = $(el);
-        const titleEl = $el.find("h2 a, h3 a, .title a, a.property-link").first();
-        const title = titleEl.text().trim();
-        if (!title) return;
-
-        const link =
-          titleEl.attr("href") || $el.find("a").first().attr("href");
-        const fullUrl = link
-          ? link.startsWith("http")
-            ? link
-            : `https://www.ohne-makler.net${link}`
-          : "";
-
-        const idMatch = fullUrl.match(/\/(\d+)/);
-        const id = idMatch ? idMatch[1] : "";
-
-        const allText = $el.text();
-        const priceMatch = allText.match(/([\d.,]+)\s*€/i);
-        const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
-
-        const roomsMatch = allText.match(/([\d,]+)\s*(?:Zimmer|Zi\.)/i);
-        const sizeMatch = allText.match(/([\d,]+)\s*m²/i);
-
-        const address = $el.find(".location, .address, .ort, .city").text().trim();
-        const features = detectFeatures(allText);
-        features.noCommission = true; // ohne-makler = no commission by default
-
-        if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
-
-        if (id) {
-          results.push({
-            externalId: `ohnemakler-${id}`,
-            title,
-            address: address || "Buxtehude",
-            price,
-            rooms: roomsMatch ? parseNumber(roomsMatch[1]) : null,
-            size: sizeMatch ? parseNumber(sizeMatch[1]) : null,
-            source: "ohne-makler.net",
-            url: fullUrl,
-            ...features,
-          });
-        }
-      } catch (e) {
-        /* skip */
-      }
-    }
-  );
-
-  console.log(`    ✅ ohne-makler.net: ${results.length} listings`);
   return results;
 }
 
@@ -518,143 +263,15 @@ async function scrapeMarktDe() {
   return results;
 }
 
-// ==================== meinestadt.de ====================
-async function scrapeMeineStadt() {
-  const url =
-    "https://www.meinestadt.de/buxtehude/immobilien/wohnungen?etype=rent";
-  console.log("  📡 meinestadt.de...");
-  const html = await fetchPage(url);
-  if (!html) return [];
-
-  const $ = cheerio.load(html);
-  const results = [];
-
-  $('a[href*="/expose/"], [class*="result"], [class*="listing"], article').each((_, el) => {
-    try {
-      const $el = $(el);
-      const link = $el.is("a") ? $el.attr("href") : $el.find("a").first().attr("href");
-      if (!link) return;
-      const fullUrl = link.startsWith("http")
-        ? link
-        : `https://www.meinestadt.de${link}`;
-
-      const idMatch = link.match(/expose\/(\d+)/i) || link.match(/\/(\d+)/);
-      const id = idMatch ? idMatch[1] : "";
-      if (!id) return;
-
-      // Skip duplicate IDs
-      if (results.some((r) => r.externalId === `meinestadt-${id}`)) return;
-
-      const allText = $el.text().trim();
-      if (!allText || allText.length < 10) return;
-
-      const title = $el.find("h2, h3, [class*='title']").first().text().trim() ||
-        allText.split(/\n/)[0]?.trim()?.substring(0, 100) || "Wohnung in Buxtehude";
-
-      const priceMatch = allText.match(/([\d.,]+)\s*€/i);
-      const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
-
-      const roomsMatch = allText.match(/([\d,]+)\s*(?:Zimmer|Zi\.?|Räume)/i);
-      const sizeMatch = allText.match(/([\d.,]+)\s*m²/i);
-
-      const features = detectFeatures(allText);
-      if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
-
-      results.push({
-        externalId: `meinestadt-${id}`,
-        title,
-        address: "Buxtehude",
-        price,
-        rooms: roomsMatch ? parseNumber(roomsMatch[1]) : null,
-        size: sizeMatch ? parseNumber(sizeMatch[1]) : null,
-        source: "meinestadt.de",
-        url: fullUrl,
-        ...features,
-      });
-    } catch (e) {
-      /* skip */
-    }
-  });
-
-  console.log(`    ✅ meinestadt.de: ${results.length} listings`);
-  return results;
-}
-
-// ==================== Nestoria ====================
-async function scrapeNestoria() {
-  const url =
-    "https://www.nestoria.de/buxtehude/wohnung/mieten";
-  console.log("  📡 Nestoria...");
-  const html = await fetchPage(url);
-  if (!html) return [];
-
-  const $ = cheerio.load(html);
-  const results = [];
-
-  $('a[href*="/detail/"], .result, .listing, [class*="PropertyCard"], [class*="property"]').each((_, el) => {
-    try {
-      const $el = $(el);
-      const link = $el.is("a") ? $el.attr("href") : $el.find("a").first().attr("href");
-      if (!link) return;
-      const fullUrl = link.startsWith("http")
-        ? link
-        : `https://www.nestoria.de${link}`;
-
-      const idMatch = link.match(/detail\/(\d+)/i) || link.match(/\/(\d+)/);
-      const id = idMatch ? idMatch[1] : "";
-      if (!id) return;
-
-      if (results.some((r) => r.externalId === `nestoria-${id}`)) return;
-
-      const allText = $el.text().trim();
-      if (!allText || allText.length < 10) return;
-
-      const title = $el.find("h2, h3, [class*='title']").first().text().trim() ||
-        allText.split(/\n/)[0]?.trim()?.substring(0, 100) || "Wohnung in Buxtehude";
-
-      const priceMatch = allText.match(/([\d.,]+)\s*€/i);
-      const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
-
-      const roomsMatch = allText.match(/([\d,]+)\s*(?:Zimmer|Zi\.?)/i);
-      const sizeMatch = allText.match(/([\d.,]+)\s*m²/i);
-
-      const features = detectFeatures(allText);
-      if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
-
-      results.push({
-        externalId: `nestoria-${id}`,
-        title,
-        address: "Buxtehude",
-        price,
-        rooms: roomsMatch ? parseNumber(roomsMatch[1]) : null,
-        size: sizeMatch ? parseNumber(sizeMatch[1]) : null,
-        source: "Nestoria",
-        url: fullUrl,
-        ...features,
-      });
-    } catch (e) {
-      /* skip */
-    }
-  });
-
-  console.log(`    ✅ Nestoria: ${results.length} listings`);
-  return results;
-}
-
 // ==================== Main scrape function ====================
 async function scrapeAll() {
   console.log("\n🔍 Starting apartment scrape...");
   const startTime = Date.now();
 
   const scrapers = [
-    scrapeImmoScout24,
-    scrapeImmowelt,
     scrapeKleinanzeigen,
     scrapeWohnungsboerse,
-    scrapeOhneMakler,
     scrapeMarktDe,
-    scrapeMeineStadt,
-    scrapeNestoria,
   ];
 
   const allResults = [];
