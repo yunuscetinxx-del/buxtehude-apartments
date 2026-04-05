@@ -173,10 +173,38 @@
       #apt-detail-modal.active { display: block; }
       #apt-detail-modal::-webkit-scrollbar { width: 6px; }
       #apt-detail-modal::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-      .adm-img {
-        width: 100%; height: 220px; object-fit: cover;
+      .adm-gallery {
+        position: relative;
+        width: 100%; height: 250px;
+        overflow: hidden;
         border-radius: 18px 18px 0 0;
+        background: #1e293b;
+      }
+      .adm-gallery img {
+        width: 100%; height: 250px; object-fit: cover;
         display: block;
+      }
+      .adm-gallery-btn {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        background: rgba(0,0,0,0.55); border: none;
+        color: #fff; font-size: 22px;
+        width: 40px; height: 40px; border-radius: 50%;
+        cursor: pointer; display: flex;
+        align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+        z-index: 2; transition: background 0.2s;
+      }
+      .adm-gallery-btn:hover { background: rgba(0,0,0,0.8); }
+      .adm-gallery-prev { left: 10px; }
+      .adm-gallery-next { right: 10px; }
+      .adm-gallery-counter {
+        position: absolute; bottom: 10px; left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.6);
+        color: #fff; font-size: 12px;
+        padding: 3px 12px; border-radius: 12px;
+        backdrop-filter: blur(4px);
+        z-index: 2;
       }
       .adm-no-img {
         width: 100%; height: 120px;
@@ -620,9 +648,28 @@
             { key: 'hasParking', label: '\u0645\u0648\u0642\u0641 \u0633\u064a\u0627\u0631\u0629', icon: '\u{1f697}' },
           ];
 
-          const imgHtml = apt.imageUrl
-            ? `<img class="adm-img" src="${escapeHtml(apt.imageUrl)}" onerror="this.outerHTML='<div class=adm-no-img>\u{1f3e0}</div>'">`
-            : '<div class="adm-no-img">\u{1f3e0}</div>';
+          // Parse images array
+          let images = [];
+          try { images = JSON.parse(apt.imageUrls || '[]'); } catch(e) {}
+          if (!images.length && apt.imageUrl) images = [apt.imageUrl];
+
+          let imgHtml;
+          if (images.length > 0) {
+            const btns = images.length > 1
+              ? `<button class="adm-gallery-btn adm-gallery-prev" onclick="admGallery(-1)">&#8250;</button>
+                 <button class="adm-gallery-btn adm-gallery-next" onclick="admGallery(1)">&#8249;</button>
+                 <div class="adm-gallery-counter"><span id="adm-img-idx">1</span> / ${images.length}</div>`
+              : '';
+            imgHtml = `<div class="adm-gallery" id="adm-gallery" data-idx="0">
+              <img id="adm-gallery-img" src="${escapeHtml(images[0])}" onerror="this.style.display='none'">
+              ${btns}
+            </div>`;
+          } else {
+            imgHtml = '<div class="adm-no-img">\u{1f3e0}</div>';
+          }
+
+          // Store images on window for gallery navigation
+          window._admImages = images;
 
           const featHtml = features.map(f =>
             `<span class="adm-feat ${apt[f.key] ? 'adm-feat-yes' : 'adm-feat-no'}">${f.icon} ${f.label}</span>`
@@ -677,6 +724,20 @@
           overlay.classList.remove('active');
           modal.classList.remove('active');
           modal.innerHTML = '';
+          window._admImages = [];
+        };
+
+        window.admGallery = function(dir) {
+          const imgs = window._admImages || [];
+          if (imgs.length <= 1) return;
+          const gallery = document.getElementById('adm-gallery');
+          let idx = parseInt(gallery.dataset.idx || '0') + dir;
+          if (idx < 0) idx = imgs.length - 1;
+          if (idx >= imgs.length) idx = 0;
+          gallery.dataset.idx = idx;
+          document.getElementById('adm-gallery-img').src = imgs[idx];
+          const counter = document.getElementById('adm-img-idx');
+          if (counter) counter.textContent = idx + 1;
         };
 
         overlay.addEventListener('click', window.closeAptDetail);

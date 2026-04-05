@@ -183,9 +183,12 @@ async function scrapeKleinanzeigen() {
 
           const detectedArea = detectArea(address + ' ' + title) || area.name;
 
-          // Extract image
-          const imgEl = $el.find(".aditem-image img, .imagebox img, img").first();
-          const imageUrl = imgEl.attr("src") || imgEl.attr("data-src") || "";
+          // Extract images
+          const images = [];
+          $el.find(".aditem-image img, .imagebox img, img").each((_, img) => {
+            const src = $el.find(img).attr("src") || $el.find(img).attr("data-src") || "";
+            if (src.startsWith("http") && !images.includes(src)) images.push(src);
+          });
 
           results.push({
             externalId: `kleinanzeigen-${id}`,
@@ -197,7 +200,8 @@ async function scrapeKleinanzeigen() {
             source: "Kleinanzeigen",
             url: fullUrl,
             area: detectedArea,
-            imageUrl: imageUrl.startsWith("http") ? imageUrl : "",
+            imageUrl: images[0] || "",
+            imageUrls: JSON.stringify(images),
             ...features,
           });
           pageCount++;
@@ -275,6 +279,7 @@ async function scrapeWohnungsboerse() {
           url: fullUrl,
           area: detectedArea,
           imageUrl: wbImageUrl.startsWith("http") ? wbImageUrl : "",
+          imageUrls: wbImageUrl.startsWith("http") ? JSON.stringify([wbImageUrl]) : "[]",
           ...features,
         });
       } catch (e) {
@@ -364,6 +369,7 @@ async function scrapeMarktDe() {
           area: detectedArea,
           publishedAt,
           imageUrl: marktImageUrl.startsWith("http") ? marktImageUrl : "",
+          imageUrls: marktImageUrl.startsWith("http") ? JSON.stringify([marktImageUrl]) : "[]",
           ...features,
         });
       } catch (e) {
@@ -435,9 +441,12 @@ async function scrapeImmowelt() {
         const detectedArea = detectArea(address + " " + descBox) || area.name;
         const features = detectFeatures(descBox);
 
-        // Extract image
-        const imgEl = $card.find("img").first();
-        const imageUrl = imgEl.attr("src") || imgEl.attr("data-src") || "";
+        // Extract all images
+        const images = [];
+        $card.find("img").each((_, img) => {
+          const src = $(img).attr("src") || $(img).attr("data-src") || "";
+          if (src.startsWith("http") && src.includes("immowelt") && !images.includes(src)) images.push(src);
+        });
 
         results.push({
           externalId: `immowelt-${id}`,
@@ -449,7 +458,8 @@ async function scrapeImmowelt() {
           source: "Immowelt",
           url: fullUrl,
           area: detectedArea,
-          imageUrl: imageUrl.startsWith("http") ? imageUrl : "",
+          imageUrl: images[0] || "",
+          imageUrls: JSON.stringify(images),
           ...features,
         });
       } catch (e) {

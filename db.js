@@ -83,6 +83,9 @@ async function getDb() {
   // Image column
   try { db.run("ALTER TABLE apartments ADD COLUMN imageUrl TEXT DEFAULT ''"); } catch (e) {}
   
+  // Multiple images column (JSON array)
+  try { db.run("ALTER TABLE apartments ADD COLUMN imageUrls TEXT DEFAULT '[]'"); } catch (e) {}
+  
   // Fix source name: immowelt -> Immowelt
   try { db.run("UPDATE apartments SET source = 'Immowelt' WHERE source = 'immowelt'"); } catch (e) {}
   
@@ -167,17 +170,20 @@ function upsertApartment(apt) {
       saveDb();
       return { inserted: true, id: existing.id, restored: true };
     }
-    // Update imageUrl if we have one and existing doesn't
+    // Always update images if we have them
     if (apt.imageUrl) {
-      db.run("UPDATE apartments SET imageUrl = ? WHERE id = ? AND (imageUrl IS NULL OR imageUrl = '')", [apt.imageUrl, existing.id]);
+      db.run("UPDATE apartments SET imageUrl = ? WHERE id = ?", [apt.imageUrl, existing.id]);
+    }
+    if (apt.imageUrls && apt.imageUrls !== '[]') {
+      db.run("UPDATE apartments SET imageUrls = ? WHERE id = ?", [apt.imageUrls, existing.id]);
     }
     return { inserted: false, id: existing.id };
   }
 
   const category = categorize(apt.price);
   db.run(
-    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area, publishedAt, imageUrl)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area, publishedAt, imageUrl, imageUrls)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       apt.externalId,
       apt.title || "بدون عنوان",
@@ -196,6 +202,7 @@ function upsertApartment(apt) {
       apt.area || "Buxtehude",
       apt.publishedAt || "",
       apt.imageUrl || "",
+      apt.imageUrls || "[]",
     ]
   );
 
