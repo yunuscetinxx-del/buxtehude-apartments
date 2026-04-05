@@ -176,7 +176,9 @@ async function scrapeKleinanzeigen() {
           if (/\bwg\b|wohngemeinschaft|mitbewohner/i.test(descText)) return;
 
           // Only keep valid area listings (skip promoted ads from other cities)
-          if (!isValidArea(address + ' ' + title)) return;
+          if (!isValidArea(address)) return;
+          // Also reject if title mentions a foreign city
+          if (titleHasForeignLocation(title)) return;
 
           const detectedArea = detectArea(address + ' ' + title) || area.name;
 
@@ -375,8 +377,12 @@ async function scrapeAll() {
     }
   }
 
-  // Final safety filter: reject listings that mention foreign locations in title
-  const filtered = allResults.filter(a => !titleHasForeignLocation(a.title));
+  // Final safety filter: address must contain valid area AND title must not mention foreign city
+  const filtered = allResults.filter(a => {
+    if (!isValidArea(a.address)) return false;
+    if (titleHasForeignLocation(a.title)) return false;
+    return true;
+  });
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(
