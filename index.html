@@ -183,6 +183,7 @@
       .adm-gallery img {
         width: 100%; height: 250px; object-fit: cover;
         display: block;
+        cursor: zoom-in;
       }
       .adm-gallery-btn {
         position: absolute; top: 50%; transform: translateY(-50%);
@@ -212,6 +213,48 @@
         border-radius: 18px 18px 0 0;
         display: flex; align-items: center; justify-content: center;
         color: #475569; font-size: 48px;
+      }
+      /* Fullscreen image lightbox */
+      #img-lightbox {
+        display: none; position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 10020;
+        align-items: center; justify-content: center;
+      }
+      #img-lightbox.active { display: flex; }
+      #img-lightbox img {
+        max-width: 95vw; max-height: 90vh;
+        object-fit: contain; border-radius: 8px;
+      }
+      #img-lightbox .lb-close {
+        position: absolute; top: 16px; left: 16px;
+        background: rgba(255,255,255,0.15); border: none;
+        color: #fff; font-size: 28px;
+        width: 44px; height: 44px; border-radius: 50%;
+        cursor: pointer; display: flex;
+        align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      #img-lightbox .lb-close:hover { background: rgba(255,255,255,0.3); }
+      #img-lightbox .lb-nav {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        background: rgba(255,255,255,0.15); border: none;
+        color: #fff; font-size: 28px;
+        width: 50px; height: 50px; border-radius: 50%;
+        cursor: pointer; display: flex;
+        align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      #img-lightbox .lb-nav:hover { background: rgba(255,255,255,0.3); }
+      #img-lightbox .lb-prev { left: 16px; }
+      #img-lightbox .lb-next { right: 16px; }
+      #img-lightbox .lb-counter {
+        position: absolute; bottom: 20px; left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.6);
+        color: #fff; font-size: 14px;
+        padding: 6px 18px; border-radius: 20px;
       }
       .adm-close {
         position: absolute; top: 12px; left: 12px;
@@ -384,6 +427,7 @@
       <button class="area-btn" data-area="Neu Wulmstorf">Neu Wulmstorf</button>
       <button id="settings-btn">⚙️ إشعارات التلغرام</button>
       <button id="mark-seen-btn" class="area-btn" style="background:#065f46;border-color:#065f46;color:#fff;">👁 تم المشاهدة</button>
+      <button id="email-fav-btn" class="area-btn" style="background:#1e3a5f;border-color:#3b82f6;color:#93c5fd;">📧 إرسال المفضلة</button>
       <button id="deleted-btn" class="area-btn" style="background:#7f1d1d;border-color:#991b1b;color:#fca5a5;">🗑️ المحذوفة <span id="deleted-count" class="area-count">0</span></button>
     </div>
     <div id="settings-overlay"></div>
@@ -399,6 +443,23 @@
     <!-- Apartment detail modal -->
     <div id="apt-detail-overlay"></div>
     <div id="apt-detail-modal"></div>
+    <!-- Fullscreen image lightbox -->
+    <div id="img-lightbox">
+      <button class="lb-close" onclick="closeLightbox()">✕</button>
+      <button class="lb-nav lb-prev" onclick="lbNav(-1)">&#8250;</button>
+      <img id="lb-img" src="" alt="">
+      <button class="lb-nav lb-next" onclick="lbNav(1)">&#8249;</button>
+      <div class="lb-counter"><span id="lb-idx">1</span> / <span id="lb-total">1</span></div>
+    </div>
+    <!-- Email favorites modal -->
+    <div id="email-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10015;"></div>
+    <div id="email-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10016;background:#1e293b;border:2px solid #3b82f6;border-radius:16px;padding:24px 28px;min-width:340px;font-family:'Tajawal',sans-serif;direction:rtl;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <h3 style="color:#f8fafc;margin:0 0 12px 0;font-size:18px;">📧 إرسال المفضلة بالإيميل</h3>
+      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px 0;">أدخل إيميلك وسيتم إرسال قائمة الشقق المفضلة</p>
+      <input id="email-input" type="email" placeholder="example@email.com" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:'Tajawal',sans-serif;font-size:14px;margin-bottom:12px;direction:ltr;text-align:left;" />
+      <button id="send-email-btn" style="width:100%;padding:10px;border-radius:10px;border:none;background:#3b82f6;color:#fff;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">📤 إرسال</button>
+      <p id="email-status" style="color:#22c55e;font-size:13px;text-align:center;margin:8px 0 0 0;display:none;"></p>
+    </div>
     <div id="root"></div>
     <script>
       // Area filter bar logic
@@ -436,33 +497,22 @@
       })();
     </script>
     <script>
-      // Mark all as seen: button + auto after 30 seconds
+      // Mark all as seen: button click only (no more auto-30s)
       (function() {
         function markAllSeen() {
           fetch('/api/mark-all-seen', { method: 'POST' })
             .then(() => {
               const btn = document.getElementById('mark-seen-btn');
               if (btn) { btn.textContent = '✅ تم'; btn.style.background = '#166534'; }
-              // Remove red glow without reloading - just remove the CSS classes
-              document.querySelectorAll('[class*="ring-red"], [class*="border-red"], [class*="shadow-red"], [class*="animate-pulse"]').forEach(el => {
-                el.className = el.className.replace(/\bring-2\b/g, '').replace(/\bring-red-500\b/g, '').replace(/\bborder-red-500\b/g, '').replace(/\bshadow-red-500\/20\b/g, '').replace(/\banimate-pulse\b/g, '');
-                el.style.animation = 'none';
-                el.style.boxShadow = 'none';
-              });
-              // Also remove any pulse-red animations
-              document.querySelectorAll('[style*="pulse-red"]').forEach(el => {
-                el.style.animation = 'none';
-              });
+              // Reload page so React gets fresh data with isNew=0
+              setTimeout(() => location.reload(), 600);
             })
             .catch(() => {});
         }
         
-        // Button click
+        // Button click only
         const btn = document.getElementById('mark-seen-btn');
         if (btn) btn.addEventListener('click', markAllSeen);
-        
-        // Auto mark after 30 seconds of viewing
-        setTimeout(markAllSeen, 30000);
       })();
     </script>
     <script>
@@ -513,6 +563,69 @@
             status.style.display = 'block';
             status.style.color = '#ef4444';
           });
+        });
+      })();
+    </script>
+    <script>
+      // Email favorites feature
+      (function() {
+        const btn = document.getElementById('email-fav-btn');
+        const panel = document.getElementById('email-panel');
+        const overlay = document.getElementById('email-overlay');
+        const input = document.getElementById('email-input');
+        const sendBtn = document.getElementById('send-email-btn');
+        const status = document.getElementById('email-status');
+
+        // Load saved email
+        const savedEmail = localStorage.getItem('userEmail') || '';
+        if (input) input.value = savedEmail;
+
+        function openEmailPanel() {
+          panel.style.display = 'block';
+          overlay.style.display = 'block';
+          status.style.display = 'none';
+        }
+        function closeEmailPanel() {
+          panel.style.display = 'none';
+          overlay.style.display = 'none';
+        }
+
+        btn.addEventListener('click', openEmailPanel);
+        overlay.addEventListener('click', closeEmailPanel);
+
+        sendBtn.addEventListener('click', async () => {
+          const email = input.value.trim();
+          if (!email || !email.includes('@')) {
+            status.textContent = '❌ أدخل إيميل صحيح';
+            status.style.color = '#ef4444';
+            status.style.display = 'block';
+            return;
+          }
+          localStorage.setItem('userEmail', email);
+          sendBtn.textContent = '⏳ جاري الإرسال...';
+          sendBtn.disabled = true;
+          try {
+            const res = await fetch('/api/email-favorites', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (data.success) {
+              status.textContent = '✅ تم الإرسال! تحقق من بريدك';
+              status.style.color = '#22c55e';
+            } else {
+              status.textContent = data.error || '❌ فشل الإرسال';
+              status.style.color = '#ef4444';
+            }
+          } catch(e) {
+            status.textContent = '❌ خطأ في الإرسال';
+            status.style.color = '#ef4444';
+          }
+          status.style.display = 'block';
+          sendBtn.textContent = '📤 إرسال';
+          sendBtn.disabled = false;
+          setTimeout(closeEmailPanel, 2500);
         });
       })();
     </script>
@@ -661,7 +774,7 @@
                  <div class="adm-gallery-counter"><span id="adm-img-idx">1</span> / ${images.length}</div>`
               : '';
             imgHtml = `<div class="adm-gallery" id="adm-gallery" data-idx="0">
-              <img id="adm-gallery-img" src="${escapeHtml(images[0])}" onerror="this.style.display='none'">
+              <img id="adm-gallery-img" src="${escapeHtml(images[0])}" onclick="openLightbox()" onerror="this.style.display='none'">
               ${btns}
             </div>`;
           } else {
@@ -739,6 +852,45 @@
           const counter = document.getElementById('adm-img-idx');
           if (counter) counter.textContent = idx + 1;
         };
+
+        // Fullscreen lightbox
+        window.openLightbox = function() {
+          const imgs = window._admImages || [];
+          if (!imgs.length) return;
+          const gallery = document.getElementById('adm-gallery');
+          const idx = parseInt(gallery?.dataset.idx || '0');
+          const lb = document.getElementById('img-lightbox');
+          document.getElementById('lb-img').src = imgs[idx];
+          document.getElementById('lb-idx').textContent = idx + 1;
+          document.getElementById('lb-total').textContent = imgs.length;
+          lb.dataset.idx = idx;
+          lb.classList.add('active');
+        };
+        window.closeLightbox = function() {
+          document.getElementById('img-lightbox').classList.remove('active');
+        };
+        window.lbNav = function(dir) {
+          const imgs = window._admImages || [];
+          if (imgs.length <= 1) return;
+          const lb = document.getElementById('img-lightbox');
+          let idx = parseInt(lb.dataset.idx || '0') + dir;
+          if (idx < 0) idx = imgs.length - 1;
+          if (idx >= imgs.length) idx = 0;
+          lb.dataset.idx = idx;
+          document.getElementById('lb-img').src = imgs[idx];
+          document.getElementById('lb-idx').textContent = idx + 1;
+          // Also sync the gallery behind
+          const gallery = document.getElementById('adm-gallery');
+          if (gallery) {
+            gallery.dataset.idx = idx;
+            document.getElementById('adm-gallery-img').src = imgs[idx];
+            const counter = document.getElementById('adm-img-idx');
+            if (counter) counter.textContent = idx + 1;
+          }
+        };
+        document.getElementById('img-lightbox').addEventListener('click', function(e) {
+          if (e.target === this) window.closeLightbox();
+        });
 
         overlay.addEventListener('click', window.closeAptDetail);
         document.addEventListener('keydown', function(e) {
