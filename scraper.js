@@ -80,6 +80,12 @@ function isValidArea(text) {
   return /buxtehude|21614|neukloster|neu wulmstorf|neu-wulmstorf|21629/.test(lower);
 }
 
+// Reject listings that mention other cities in the title
+function isBlacklistedCity(text) {
+  const lower = (text || "").toLowerCase();
+  return /\bberlin\b|\bspandau\b|\bhamburg\b|\bmünchen\b|\bkonstanz\b|\bstade\b|\bolbernhau\b|\bhooksiel\b|\bköln\b|\bfreiburg\b|\bdresden\b|\bleipzig\b|\bmünster\b|\bdüsseldorf\b|\besslingen\b|\bstuttgart\b|\bfrankfurt\b|\bnürnberg\b|\bbochum\b|\bdortmund\b|\bbremen\b|\bhannover\b|\brostock\b|\bkiel\b|\blübeck\b|\bpotsdam\b|\bwiesbaden\b|\bmainz\b|\bmannheim\b|\baugsburg\b|\bbonn\b|\bessen\b|\bduisburg\b|\bbielefeld\b|\bchemnitz\b|\bwuppertal\b|\bmagdeburg\b|\berfurt\b|\bsaarbrücken\b|\btrier\b|\bheidenheim\b|\bdingelsdorf\b|\bwallhausen\b|\büberlingen\b/.test(lower);
+}
+
 function detectArea(text) {
   const lower = (text || "").toLowerCase();
   if (/neu.?wulmstorf|21629/.test(lower)) return "Neu Wulmstorf";
@@ -298,8 +304,8 @@ async function scrapeMarktDe() {
 
         if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
 
-        // Only keep valid area listings
-        if (!isValidArea(allText + ' ' + title + ' ' + area.name)) return;
+        // Reject listings from other cities
+        if (isBlacklistedCity(title)) return;
 
         results.push({
           externalId: `marktde-${id}`,
@@ -355,10 +361,8 @@ async function scrapeAll() {
     }
   }
 
-  // Final safety filter: only valid area apartments
-  const filtered = allResults.filter(a =>
-    isValidArea(a.title + ' ' + a.address + ' ' + (a.area || ''))
-  );
+  // Final safety filter: reject listings mentioning other cities
+  const filtered = allResults.filter(a => !isBlacklistedCity(a.title));
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(
