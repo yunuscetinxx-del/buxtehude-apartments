@@ -238,11 +238,11 @@ async function scrapeMarktDe() {
       const id = idMatch ? idMatch[1] : "";
       if (!id) return;
 
-      // Get the surrounding text for price/details
-      const $parent = $h2.parent();
-      const allText = $parent.text();
+      // Get the surrounding text for price/details (grandparent contains the full listing card)
+      const $card = $h2.parent().parent();
+      const allText = $card.text();
 
-      const priceMatch = allText.match(/([\d.,]+)\s*€\s*Nettokaltmiete/i);
+      const priceMatch = allText.match(/([\d.,]+)\s*€/i);
       const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
 
       const roomsMatch = allText.match(/([\d,]+)\s*(?:Zimmer|Zi\.)/i) || title.match(/([\d,]+)-Zimmer/i);
