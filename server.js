@@ -20,10 +20,11 @@ app.get("/api/health", (_req, res) => {
 
 // ==================== API Routes ====================
 
-// Get all apartments
-app.get("/api/apartments", (_req, res) => {
+// Get all apartments (optionally filtered by area)
+app.get("/api/apartments", (req, res) => {
   try {
-    const apartments = db.getAllApartments();
+    const area = req.query.area || "all";
+    const apartments = db.getAllApartments(area);
     res.json(apartments);
   } catch (err) {
     console.error("Error fetching apartments:", err);

@@ -17,7 +17,71 @@
         50% { box-shadow: 0 0 15px 5px rgba(239, 68, 68, 0.3); }
       }
       [class*="ring-red-500"] { animation: pulse-red 2s infinite !important; }
+      
+      /* Area filter bar */
+      #area-filter-bar {
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-bottom: 2px solid #3b82f6;
+        font-family: 'Tajawal', sans-serif;
+        direction: rtl;
+      }
+      #area-filter-bar label {
+        color: #94a3b8;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      #area-filter-bar .area-btn {
+        padding: 6px 16px;
+        border-radius: 20px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #cbd5e1;
+        cursor: pointer;
+        font-family: 'Tajawal', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+      #area-filter-bar .area-btn:hover {
+        background: #334155;
+        border-color: #3b82f6;
+      }
+      #area-filter-bar .area-btn.active {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #fff;
+        font-weight: 700;
+      }
+      #area-filter-bar .area-count {
+        font-size: 11px;
+        background: rgba(255,255,255,0.15);
+        padding: 1px 6px;
+        border-radius: 10px;
+        margin-right: 4px;
+      }
     </style>
+    <script>
+      // Area filter: intercept fetch to add ?area= parameter
+      (function() {
+        const currentArea = localStorage.getItem('selectedArea') || 'all';
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+          if (typeof url === 'string' && url.includes('/api/apartments') && !url.includes('?area=') && !url.includes('&area=')) {
+            const separator = url.includes('?') ? '&' : '?';
+            url = url + separator + 'area=' + encodeURIComponent(currentArea);
+          }
+          return originalFetch.call(this, url, options);
+        };
+      })();
+    </script>
     <script>
       // Notification + Sound for new apartments
       (function() {
@@ -79,7 +143,49 @@
     </script>
   </head>
   <body>
+    <div id="area-filter-bar">
+      <label>📍 المنطقة:</label>
+      <button class="area-btn" data-area="all">الكل</button>
+      <button class="area-btn" data-area="Buxtehude">Buxtehude</button>
+      <button class="area-btn" data-area="Neukloster">Neukloster</button>
+      <button class="area-btn" data-area="Neu Wulmstorf">Neu Wulmstorf</button>
+    </div>
     <div id="root"></div>
+    <script>
+      // Area filter bar logic
+      (function() {
+        const currentArea = localStorage.getItem('selectedArea') || 'all';
+        const buttons = document.querySelectorAll('#area-filter-bar .area-btn');
+        buttons.forEach(btn => {
+          if (btn.dataset.area === currentArea) btn.classList.add('active');
+          btn.addEventListener('click', () => {
+            const area = btn.dataset.area;
+            localStorage.setItem('selectedArea', area);
+            location.reload();
+          });
+        });
+
+        // Fetch counts for each area and display
+        async function loadCounts() {
+          try {
+            const res = await fetch('/api/apartments?area=all');
+            const apts = await res.json();
+            const counts = { all: apts.length, Buxtehude: 0, Neukloster: 0, 'Neu Wulmstorf': 0 };
+            apts.forEach(a => { if (counts[a.area] !== undefined) counts[a.area]++; });
+            buttons.forEach(btn => {
+              const c = counts[btn.dataset.area];
+              if (c !== undefined) {
+                const span = document.createElement('span');
+                span.className = 'area-count';
+                span.textContent = c;
+                btn.appendChild(span);
+              }
+            });
+          } catch(e) {}
+        }
+        setTimeout(loadCounts, 1000);
+      })();
+    </script>
   <script data-pplx-inline-edit>
 (function(){
   if(window===window.top)return;

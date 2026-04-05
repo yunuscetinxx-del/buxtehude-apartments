@@ -40,6 +40,7 @@ function formatApartment(apt) {
   msg += `💰 ${price}`;
   if (details) msg += ` | ${details}`;
   msg += `\n📍 ${apt.address || "Buxtehude"}`;
+  if (apt.area && apt.area !== 'Buxtehude') msg += ` (${apt.area})`;
   msg += `\n📌 ${apt.source}`;
   if (features.length) msg += `\n${features.join(" ")}`;
   if (apt.url) msg += `\n\n🔗 <a href="${apt.url}">فتح الإعلان</a>`;

@@ -35,6 +35,7 @@ async function getDb() {
       hasBalcony INTEGER DEFAULT 0,
       hasGarden INTEGER DEFAULT 0,
       hasParking INTEGER DEFAULT 0,
+      area TEXT DEFAULT 'Buxtehude',
       addedAt TEXT DEFAULT (datetime('now')),
       notes TEXT DEFAULT ''
     );
@@ -49,8 +50,15 @@ async function getDb() {
     );
   `);
   
-  // Clean up non-Buxtehude apartments that may have slipped in
-  db.run("DELETE FROM apartments WHERE LOWER(address || ' ' || title) NOT LIKE '%buxtehude%' AND LOWER(address) NOT LIKE '%21614%'");
+  // Add area column if it doesn't exist (migration)
+  try {
+    db.run("ALTER TABLE apartments ADD COLUMN area TEXT DEFAULT 'Buxtehude'");
+  } catch (e) {
+    // Column already exists
+  }
+  
+  // Clean up apartments not in valid areas
+  db.run("DELETE FROM apartments WHERE LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%buxtehude%' AND LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%neukloster%' AND LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%neu wulmstorf%' AND LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%neu-wulmstorf%' AND LOWER(address) NOT LIKE '%21614%' AND LOWER(address) NOT LIKE '%21629%'");
   
   saveDb();
   return db;
@@ -106,7 +114,10 @@ function queryOne(sql, params = []) {
   return result;
 }
 
-function getAllApartments() {
+function getAllApartments(area) {
+  if (area && area !== 'all') {
+    return queryAll("SELECT * FROM apartments WHERE area = ? ORDER BY addedAt DESC", [area]);
+  }
   return queryAll("SELECT * FROM apartments ORDER BY addedAt DESC");
 }
 
@@ -126,8 +137,8 @@ function upsertApartment(apt) {
 
   const category = categorize(apt.price);
   db.run(
-    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       apt.externalId,
       apt.title || "بدون عنوان",
@@ -143,6 +154,7 @@ function upsertApartment(apt) {
       apt.hasBalcony ? 1 : 0,
       apt.hasGarden ? 1 : 0,
       apt.hasParking ? 1 : 0,
+      apt.area || "Buxtehude",
     ]
   );
 
