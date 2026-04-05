@@ -323,6 +323,13 @@ async function scrapeMarktDe() {
         // Reject listings mentioning other cities in title
         if (titleHasForeignLocation(title)) return;
 
+        // Extract published date (format: DD.MM.YYYY)
+        const dateMatch = allText.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+        let publishedAt = "";
+        if (dateMatch) {
+          publishedAt = `${dateMatch[3]}-${dateMatch[2].padStart(2,"0")}-${dateMatch[1].padStart(2,"0")}`;
+        }
+
         results.push({
           externalId: `marktde-${id}`,
           title,
@@ -333,6 +340,7 @@ async function scrapeMarktDe() {
           source: "markt.de",
           url: fullUrl,
           area: area.name,
+          publishedAt,
           ...features,
         });
       } catch (e) {

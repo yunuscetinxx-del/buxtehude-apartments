@@ -67,6 +67,13 @@ async function getDb() {
   const existing = db.exec("SELECT value FROM settings WHERE key = 'telegramAreas'");
   if (!existing.length || !existing[0].values.length) {
     db.run("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", ['telegramAreas', JSON.stringify(["Buxtehude"])]);
+  }
+
+  // Add publishedAt column if it doesn't exist
+  try {
+    db.run("ALTER TABLE apartments ADD COLUMN publishedAt TEXT DEFAULT ''");
+  } catch (e) {
+    // Column already exists
   };
   
   saveDb();
@@ -146,8 +153,8 @@ function upsertApartment(apt) {
 
   const category = categorize(apt.price);
   db.run(
-    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area, publishedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       apt.externalId,
       apt.title || "بدون عنوان",
@@ -164,6 +171,7 @@ function upsertApartment(apt) {
       apt.hasGarden ? 1 : 0,
       apt.hasParking ? 1 : 0,
       apt.area || "Buxtehude",
+      apt.publishedAt || "",
     ]
   );
 
