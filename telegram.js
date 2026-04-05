@@ -112,6 +112,7 @@ function startPolling() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       commands: [
+        { command: "check", description: "افحص حال السيرفر والشقق الجديدة 🟢" },
         { command: "start", description: "بحث عن شقق جديدة 🔍" },
         { command: "all", description: "عرض جميع الشقق المحفوظة 📋" },
         { command: "cheap", description: "شقق أقل من 800€ 💰" },
