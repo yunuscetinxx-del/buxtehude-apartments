@@ -724,7 +724,7 @@
                 ${imgHtml}
                 <div style="flex:1;min-width:0;">
                   <div style="color:#f8fafc;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${apt.title}</div>
-                  <div style="color:#94a3b8;font-size:12px;margin-top:2px;">💰 ${apt.price || 0}€ | 📍 ${apt.address || apt.area} | 📌 ${apt.source}</div>
+                  <div style="color:#94a3b8;font-size:12px;margin-top:2px;">💰 ${apt.price || 0}€${apt.priceType ? ' '+apt.priceType : ''} | 📍 ${apt.address || apt.area} | 📌 ${apt.source}</div>
                   <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
                     <span style="color:${reasonColor};font-size:12px;font-weight:600;">${reason}</span>
                     <span style="color:#64748b;font-size:11px;">${formatDate(apt.deletedAt)}</span>
@@ -854,7 +854,7 @@
               <div class="adm-address">\u{1f4cd} ${escapeHtml(apt.address || apt.area)}</div>
               <div class="adm-stats">
                 <div class="adm-stat">
-                  <div class="adm-stat-val price">${apt.price || 0}\u20ac</div>
+                  <div class="adm-stat-val price">${apt.price || 0}\u20ac${apt.priceType ? ' <span style="font-size:11px;font-weight:400;color:#94a3b8">'+apt.priceType+'</span>' : ''}</div>
                   <div class="adm-stat-label">\u0627\u0644\u0625\u064a\u062c\u0627\u0631 \u0627\u0644\u0634\u0647\u0631\u064a</div>
                 </div>
                 <div class="adm-stat">

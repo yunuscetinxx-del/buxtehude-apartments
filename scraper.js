@@ -162,6 +162,7 @@ async function scrapeKleinanzeigen() {
             .first()
             .text();
           const price = parsePrice(priceText);
+          const priceType = /warmmiete/i.test(priceText) ? 'Warmmiete' : /kaltmiete/i.test(priceText) ? 'Kaltmiete' : '';
 
           const address = $el
             .find(".aditem-main--top--left, .aditem-details--location")
@@ -202,6 +203,7 @@ async function scrapeKleinanzeigen() {
             area: detectedArea,
             imageUrl: images[0] || "",
             imageUrls: JSON.stringify(images),
+            priceType,
             ...features,
           });
           pageCount++;
@@ -249,7 +251,9 @@ async function scrapeWohnungsboerse() {
         const title = lines[0] || `Wohnung in ${area.name}`;
 
         const priceMatch = allText.match(/Kaltmiete\s*([\d.,]+)\s*€/i);
-        const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
+        const warmMatch = allText.match(/Warmmiete\s*([\d.,]+)\s*€/i);
+        const price = warmMatch ? parsePrice(warmMatch[1]) : (priceMatch ? parsePrice(priceMatch[1]) : 0);
+        const wbPriceType = warmMatch ? 'Warmmiete' : (priceMatch ? 'Kaltmiete' : '');
 
         const roomsMatch = allText.match(/Zimmer\s*([\d,]+)/i);
         const sizeMatch = allText.match(/Fläche\s*([\d.,]+)\s*m²/i);
@@ -280,6 +284,7 @@ async function scrapeWohnungsboerse() {
           area: detectedArea,
           imageUrl: wbImageUrl.startsWith("http") ? wbImageUrl : "",
           imageUrls: wbImageUrl.startsWith("http") ? JSON.stringify([wbImageUrl]) : "[]",
+          priceType: wbPriceType,
           ...features,
         });
       } catch (e) {
@@ -328,6 +333,7 @@ async function scrapeMarktDe() {
 
         const priceMatch = allText.match(/([\d.,]+)\s*€/i);
         const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
+        const marktPriceType = /warmmiete/i.test(allText) ? 'Warmmiete' : /kaltmiete/i.test(allText) ? 'Kaltmiete' : '';
 
         const roomsMatch = allText.match(/([\d,]+)\s*(?:Zimmer|Zi\.)/i) || title.match(/([\d,]+)-Zimmer/i);
         const sizeMatch = allText.match(/([\d.,]+)\s*m²/i);
@@ -370,6 +376,7 @@ async function scrapeMarktDe() {
           publishedAt,
           imageUrl: marktImageUrl.startsWith("http") ? marktImageUrl : "",
           imageUrls: marktImageUrl.startsWith("http") ? JSON.stringify([marktImageUrl]) : "[]",
+          priceType: marktPriceType,
           ...features,
         });
       } catch (e) {
@@ -413,10 +420,11 @@ async function scrapeImmowelt() {
           ? link.split("?")[0].split("#")[0]
           : `https://www.immowelt.de${link.split("?")[0].split("#")[0]}`;
 
-        // Price from dedicated element: "945 €Kaltmiete" or "1.900 €Kaltmiete"
+        // Price from dedicated element: "945 €Kaltmiete" or "1.900 €Warmmiete"
         const priceText = $card.find('[data-testid="cardmfe-price-testid"]').text().trim();
         const priceMatch = priceText.match(/([\d.,]+)\s*€/);
         const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
+        const iwPriceType = /warmmiete/i.test(priceText) ? 'Warmmiete' : /kaltmiete/i.test(priceText) ? 'Kaltmiete' : '';
 
         // Key facts: "3 Zimmer·72,3 m²·EG" or "4 Zimmer·142,2 m²·frei ab 01.08.2026"
         const factsText = $card.find('[data-testid="cardmfe-keyfacts-testid"]').text().trim();
@@ -460,6 +468,7 @@ async function scrapeImmowelt() {
           area: detectedArea,
           imageUrl: images[0] || "",
           imageUrls: JSON.stringify(images),
+          priceType: iwPriceType,
           ...features,
         });
       } catch (e) {

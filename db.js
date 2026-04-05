@@ -86,6 +86,9 @@ async function getDb() {
   // Multiple images column (JSON array)
   try { db.run("ALTER TABLE apartments ADD COLUMN imageUrls TEXT DEFAULT '[]'"); } catch (e) {}
   
+  // Price type column (Warmmiete / Kaltmiete)
+  try { db.run("ALTER TABLE apartments ADD COLUMN priceType TEXT DEFAULT ''"); } catch (e) {}
+  
   // Fix source name: immowelt -> Immowelt
   try { db.run("UPDATE apartments SET source = 'Immowelt' WHERE source = 'immowelt'"); } catch (e) {}
   
@@ -186,13 +189,17 @@ function upsertApartment(apt) {
     if (apt.imageUrls && apt.imageUrls !== '[]') {
       db.run("UPDATE apartments SET imageUrls = ? WHERE id = ?", [apt.imageUrls, existing.id]);
     }
+    // Update priceType if we have it
+    if (apt.priceType) {
+      db.run("UPDATE apartments SET priceType = ? WHERE id = ?", [apt.priceType, existing.id]);
+    }
     return { inserted: false, id: existing.id };
   }
 
   const category = categorize(apt.price);
   db.run(
-    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area, publishedAt, imageUrl, imageUrls)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area, publishedAt, imageUrl, imageUrls, priceType)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       apt.externalId,
       apt.title || "بدون عنوان",
@@ -212,6 +219,7 @@ function upsertApartment(apt) {
       apt.publishedAt || "",
       apt.imageUrl || "",
       apt.imageUrls || "[]",
+      apt.priceType || "",
     ]
   );
 
