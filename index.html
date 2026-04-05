@@ -479,7 +479,7 @@
       // Area filter bar logic
       (function() {
         const currentArea = localStorage.getItem('selectedArea') || 'all';
-        const buttons = document.querySelectorAll('#area-filter-bar .area-btn');
+        const buttons = document.querySelectorAll('#area-filter-bar .area-btn[data-area]');
         buttons.forEach(btn => {
           if (btn.dataset.area === currentArea) btn.classList.add('active');
           btn.addEventListener('click', () => {
