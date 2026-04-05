@@ -216,9 +216,17 @@ async function runFetch() {
 // ==================== Cron Job ====================
 
 // Run every 10 minutes
-cron.schedule("*/10 * * * *", () => {
+cron.schedule("*/10 * * * *", async () => {
   console.log("⏰ 10-minute cron job triggered");
-  runFetch().catch((err) => console.error("Cron fetch error:", err));
+  try {
+    await telegram.sendMessage("🔄 <b>تم إرسال طلب للسيرفر... جاري البحث عن شقق جديدة</b>");
+    const result = await runFetch();
+    if (result.newCount === 0) {
+      await telegram.sendMessage("✅ <b>لا توجد شقق جديدة</b>\n\nتم فحص " + result.totalFound + " شقة من جميع المواقع.");
+    }
+  } catch (err) {
+    console.error("Cron fetch error:", err);
+  }
 });
 
 // Hourly report to Telegram
