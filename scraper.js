@@ -80,10 +80,24 @@ function isValidArea(text) {
   return /buxtehude|21614|neukloster|neu wulmstorf|neu-wulmstorf|21629/.test(lower);
 }
 
-// Reject listings that mention other cities in the title
-function isBlacklistedCity(text) {
-  const lower = (text || "").toLowerCase();
-  return /\bberlin\b|\bspandau\b|\bhamburg\b|\bmünchen\b|\bkonstanz\b|\bstade\b|\bolbernhau\b|\bhooksiel\b|\bköln\b|\bfreiburg\b|\bdresden\b|\bleipzig\b|\bmünster\b|\bdüsseldorf\b|\besslingen\b|\bstuttgart\b|\bfrankfurt\b|\bnürnberg\b|\bbochum\b|\bdortmund\b|\bbremen\b|\bhannover\b|\brostock\b|\bkiel\b|\blübeck\b|\bpotsdam\b|\bwiesbaden\b|\bmainz\b|\bmannheim\b|\baugsburg\b|\bbonn\b|\bessen\b|\bduisburg\b|\bbielefeld\b|\bchemnitz\b|\bwuppertal\b|\bmagdeburg\b|\berfurt\b|\bsaarbrücken\b|\btrier\b|\bheidenheim\b|\bdingelsdorf\b|\bwallhausen\b|\büberlingen\b/.test(lower);
+// Check if a title mentions a specific location that is NOT one of our areas
+// Patterns: "in Berlin", "von Hamburg", location names in title
+function titleHasForeignLocation(title) {
+  const lower = (title || "").toLowerCase();
+  // If title mentions one of our areas, it's fine
+  if (isValidArea(lower)) return false;
+  // Check if title contains location patterns like "in [City]" or "von [City]"
+  // These indicate the listing is for another city
+  const locationPattern = /\b(?:in|von|bei|nahe|nähe)\s+([A-ZÄÖÜa-zäöüß][a-zäöüß]+)/gi;
+  let match;
+  while ((match = locationPattern.exec(title)) !== null) {
+    const city = match[1].toLowerCase();
+    // Skip common non-city words
+    if (/^(der|die|das|den|dem|des|einer|einem|einen|bester|ruhiger|zentraler|guter|schöner|toller|großer|kleiner|netter)$/.test(city)) continue;
+    // If it mentions a city that's not our area, reject
+    if (!isValidArea(city)) return true;
+  }
+  return false;
 }
 
 function detectArea(text) {
@@ -304,8 +318,8 @@ async function scrapeMarktDe() {
 
         if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
 
-        // Reject listings from other cities
-        if (isBlacklistedCity(title)) return;
+        // Reject listings mentioning other cities in title
+        if (titleHasForeignLocation(title)) return;
 
         results.push({
           externalId: `marktde-${id}`,
@@ -361,8 +375,8 @@ async function scrapeAll() {
     }
   }
 
-  // Final safety filter: reject listings mentioning other cities
-  const filtered = allResults.filter(a => !isBlacklistedCity(a.title));
+  // Final safety filter: reject listings that mention foreign locations in title
+  const filtered = allResults.filter(a => !titleHasForeignLocation(a.title));
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(
