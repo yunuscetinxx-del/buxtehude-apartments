@@ -146,6 +146,8 @@ async function runFetch() {
   if (newApartments.length > 0) {
     console.log(`📱 Sending Telegram notifications for ${newApartments.length} new apartments...`);
     await telegram.notifyNewApartments(newApartments);
+    // Mark all as seen after notifying
+    db.markAllNotNew();
   }
 
   console.log(
@@ -182,6 +184,8 @@ cron.schedule("0 * * * *", async () => {
     msg += `💰 متوسط السعر: ${avg}€\n`;
     if (history.last) msg += `⏰ آخر فحص: ${history.last.fetchedAt}`;
     await telegram.sendMessage(msg);
+    // Mark all as seen after report
+    db.markAllNotNew();
     console.log("📋 Hourly report sent to Telegram");
   } catch (err) {
     console.error("Hourly report error:", err.message);
