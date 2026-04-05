@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: buxtehude-apartments
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BOT_TOKEN
+        value: 8697634207:AAEm3KTCVP_RTf6g8Or_WLlP7lLGugrvxpE
+      - key: CHAT_ID
+        value: "7234864229"

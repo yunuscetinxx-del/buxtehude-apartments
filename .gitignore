@@ -1,0 +1,4 @@
+node_modules/
+apartments.db
+start-server.bat
+*.lnk
