@@ -400,4 +400,22 @@ async function scrapeAll() {
   return { apartments: filtered, stats: sourceStats };
 }
 
-module.exports = { scrapeAll };
+// Fetch publish date from a Kleinanzeigen detail page
+async function fetchKleinanzeigenDate(url) {
+  try {
+    const html = await fetchPage(url);
+    if (!html) return "";
+    const $ = cheerio.load(html);
+    const extraInfo = $("#viewad-extra-info").text();
+    const dateMatch = extraInfo.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+    if (dateMatch) {
+      return `${dateMatch[3]}-${dateMatch[2].padStart(2, "0")}-${dateMatch[1].padStart(2, "0")}`;
+    }
+    return "";
+  } catch (e) {
+    console.log(`  ⚠ Failed to fetch KA date for ${url}: ${e.message}`);
+    return "";
+  }
+}
+
+module.exports = { scrapeAll, fetchKleinanzeigenDate };

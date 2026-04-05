@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const cron = require("node-cron");
 const db = require("./db");
-const { scrapeAll } = require("./scraper");
+const { scrapeAll, fetchKleinanzeigenDate } = require("./scraper");
 const telegram = require("./telegram");
 
 const app = express();
@@ -150,15 +150,34 @@ async function runFetch() {
 
   let newCount = 0;
   const newApartments = [];
+  const newKaListings = []; // Track new Kleinanzeigen listings that need detail page dates
   for (const apt of apartments) {
     try {
       const result = db.upsertApartment(apt);
       if (result.inserted) {
         newCount++;
         newApartments.push(apt);
+        // If Kleinanzeigen and no publishedAt, queue for detail page fetch
+        if (apt.source === "Kleinanzeigen" && !apt.publishedAt && apt.url) {
+          newKaListings.push({ id: result.id, url: apt.url });
+        }
       }
     } catch (err) {
       console.error(`  Failed to save ${apt.externalId}: ${err.message}`);
+    }
+  }
+
+  // Fetch publish dates from Kleinanzeigen detail pages (only for new listings)
+  if (newKaListings.length > 0) {
+    console.log(`📅 Fetching publish dates for ${newKaListings.length} new Kleinanzeigen listings...`);
+    for (const ka of newKaListings) {
+      const publishedAt = await fetchKleinanzeigenDate(ka.url);
+      if (publishedAt) {
+        db.updatePublishedAt(ka.id, publishedAt);
+        console.log(`  📅 ${ka.url} → ${publishedAt}`);
+      }
+      // Small delay between requests to avoid rate limiting
+      await new Promise(r => setTimeout(r, 1500));
     }
   }
 
@@ -233,6 +252,21 @@ async function start() {
   // Initialize database first
   await db.getDb();
   console.log("✅ Database initialized");
+
+  // Backfill missing publish dates for existing Kleinanzeigen listings
+  const missingDates = db.getKaListingsMissingDate();
+  if (missingDates.length > 0) {
+    console.log(`📅 Backfilling publish dates for ${missingDates.length} Kleinanzeigen listings...`);
+    for (const listing of missingDates) {
+      const publishedAt = await fetchKleinanzeigenDate(listing.url);
+      if (publishedAt) {
+        db.updatePublishedAt(listing.id, publishedAt);
+        console.log(`  📅 ID ${listing.id} → ${publishedAt}`);
+      }
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    console.log("📅 Backfill complete");
+  }
 
   // Setup Telegram bot commands
   telegram.setCommandHandler(async (text) => {

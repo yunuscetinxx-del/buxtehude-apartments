@@ -208,6 +208,15 @@ function markAllNotNew() {
   saveDb();
 }
 
+function updatePublishedAt(id, publishedAt) {
+  db.run("UPDATE apartments SET publishedAt = ? WHERE id = ?", [publishedAt, id]);
+  saveDb();
+}
+
+function getKaListingsMissingDate() {
+  return queryAll("SELECT id, url FROM apartments WHERE source = 'Kleinanzeigen' AND (publishedAt IS NULL OR publishedAt = '') AND url != ''");
+}
+
 function addFetchHistory(totalFound, newCount, sources) {
   db.run(
     "INSERT INTO fetch_history (totalFound, newCount, sources) VALUES (?, ?, ?)",
@@ -245,6 +254,8 @@ module.exports = {
   toggleContacted,
   deleteApartment,
   markAllNotNew,
+  updatePublishedAt,
+  getKaListingsMissingDate,
   addFetchHistory,
   getFetchHistory,
   getSetting,
