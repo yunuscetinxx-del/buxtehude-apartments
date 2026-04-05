@@ -220,6 +220,7 @@
       <button class="area-btn" data-area="Neukloster">Neukloster</button>
       <button class="area-btn" data-area="Neu Wulmstorf">Neu Wulmstorf</button>
       <button id="settings-btn">⚙️ إشعارات التلغرام</button>
+      <button id="mark-seen-btn" class="area-btn" style="background:#065f46;border-color:#065f46;color:#fff;">👁 تم المشاهدة</button>
     </div>
     <div id="settings-overlay"></div>
     <div id="settings-panel">
@@ -265,6 +266,29 @@
           } catch(e) {}
         }
         setTimeout(loadCounts, 1000);
+      })();
+    </script>
+    <script>
+      // Mark all as seen: button + auto after 30 seconds
+      (function() {
+        function markAllSeen() {
+          fetch('/api/mark-all-seen', { method: 'POST' })
+            .then(() => {
+              // Refresh the React app data
+              const btn = document.getElementById('mark-seen-btn');
+              if (btn) { btn.textContent = '✅ تم'; btn.style.background = '#166534'; }
+              // Trigger React Query refetch
+              setTimeout(() => location.reload(), 1000);
+            })
+            .catch(() => {});
+        }
+        
+        // Button click
+        const btn = document.getElementById('mark-seen-btn');
+        if (btn) btn.addEventListener('click', markAllSeen);
+        
+        // Auto mark after 30 seconds of viewing
+        setTimeout(markAllSeen, 30000);
       })();
     </script>
     <script>
