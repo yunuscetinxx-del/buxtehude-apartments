@@ -145,6 +145,133 @@
         border-color: #3b82f6 !important;
         box-shadow: 0 8px 25px rgba(59,130,246,0.15) !important;
       }
+      /* Apartment detail modal */
+      #apt-detail-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 10010;
+      }
+      #apt-detail-overlay.active { display: block; }
+      #apt-detail-modal {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10011;
+        background: #0f172a;
+        border: 2px solid #3b82f6;
+        border-radius: 20px;
+        width: 92%; max-width: 600px;
+        max-height: 88vh;
+        overflow-y: auto;
+        font-family: 'Tajawal', sans-serif;
+        direction: rtl;
+        box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+        display: none;
+      }
+      #apt-detail-modal.active { display: block; }
+      #apt-detail-modal::-webkit-scrollbar { width: 6px; }
+      #apt-detail-modal::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+      .adm-img {
+        width: 100%; height: 220px; object-fit: cover;
+        border-radius: 18px 18px 0 0;
+        display: block;
+      }
+      .adm-no-img {
+        width: 100%; height: 120px;
+        background: linear-gradient(135deg, #1e293b, #334155);
+        border-radius: 18px 18px 0 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #475569; font-size: 48px;
+      }
+      .adm-close {
+        position: absolute; top: 12px; left: 12px;
+        background: rgba(0,0,0,0.6); border: none;
+        color: #fff; font-size: 22px;
+        width: 36px; height: 36px; border-radius: 50%;
+        cursor: pointer; display: flex;
+        align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+        z-index: 2;
+      }
+      .adm-close:hover { background: rgba(0,0,0,0.8); }
+      .adm-body { padding: 20px 24px 24px; }
+      .adm-source {
+        display: inline-block; font-size: 11px;
+        padding: 3px 10px; border-radius: 12px;
+        font-weight: 600; margin-bottom: 8px;
+      }
+      .adm-title {
+        color: #f8fafc; font-size: 18px;
+        font-weight: 700; line-height: 1.4;
+        margin: 0 0 6px 0;
+      }
+      .adm-address {
+        color: #94a3b8; font-size: 13px;
+        display: flex; align-items: center; gap: 6px;
+        margin-bottom: 16px;
+      }
+      .adm-stats {
+        display: grid; grid-template-columns: repeat(3, 1fr);
+        gap: 10px; margin-bottom: 16px;
+      }
+      .adm-stat {
+        background: #1e293b; border: 1px solid #334155;
+        border-radius: 12px; padding: 12px; text-align: center;
+      }
+      .adm-stat-val {
+        color: #f8fafc; font-size: 20px; font-weight: 800;
+      }
+      .adm-stat-val.price { color: #34d399; }
+      .adm-stat-label {
+        color: #64748b; font-size: 11px; margin-top: 2px;
+      }
+      .adm-features {
+        display: flex; flex-wrap: wrap; gap: 8px;
+        margin-bottom: 16px;
+      }
+      .adm-feat {
+        font-size: 12px; padding: 5px 12px;
+        border-radius: 20px; border: 1px solid;
+      }
+      .adm-feat-yes { background: #064e3b33; color: #34d399; border-color: #065f4633; }
+      .adm-feat-no { background: #1e293b; color: #475569; border-color: #334155; text-decoration: line-through; }
+      .adm-notes {
+        background: #1e293b; border: 1px solid #334155;
+        border-radius: 12px; padding: 12px;
+        color: #cbd5e1; font-size: 13px;
+        line-height: 1.6; margin-bottom: 16px;
+      }
+      .adm-meta {
+        display: flex; flex-wrap: wrap; gap: 12px;
+        color: #64748b; font-size: 12px;
+        margin-bottom: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #1e293b;
+      }
+      .adm-actions {
+        display: flex; gap: 10px;
+      }
+      .adm-actions a, .adm-actions button {
+        flex: 1; padding: 12px;
+        border-radius: 12px; font-size: 14px;
+        font-weight: 700; cursor: pointer;
+        font-family: 'Tajawal', sans-serif;
+        text-align: center; text-decoration: none;
+        transition: all 0.2s;
+        display: flex; align-items: center;
+        justify-content: center; gap: 6px;
+      }
+      .adm-btn-primary {
+        background: #3b82f6; color: #fff; border: none;
+      }
+      .adm-btn-primary:hover { background: #2563eb; }
+      .adm-btn-secondary {
+        background: transparent; color: #94a3b8;
+        border: 1px solid #334155;
+      }
+      .adm-btn-secondary:hover { border-color: #3b82f6; color: #f8fafc; }
     </style>
     <script>
       // Area filter: intercept fetch to add ?area= parameter
@@ -241,6 +368,9 @@
       <button class="save-btn" id="save-tg-settings">💾 حفظ الإعدادات</button>
       <p id="tg-status" style="color:#22c55e;font-size:13px;text-align:center;margin:8px 0 0 0;display:none;"></p>
     </div>
+    <!-- Apartment detail modal -->
+    <div id="apt-detail-overlay"></div>
+    <div id="apt-detail-modal"></div>
     <div id="root"></div>
     <script>
       // Area filter bar logic
@@ -448,19 +578,134 @@
       })();
     </script>
     <script>
-      // Click on apartment card to open original listing
+      // Apartment detail modal - click card to show popup with all info
       (function() {
+        const overlay = document.getElementById('apt-detail-overlay');
+        const modal = document.getElementById('apt-detail-modal');
+        let aptCache = [];
+
+        const sourceColors = {
+          Kleinanzeigen: 'background:#0d948822;color:#2dd4bf;border-color:#0d948833',
+          Immowelt: 'background:#7c3aed22;color:#a78bfa;border-color:#7c3aed33',
+          ImmoScout24: 'background:#ea580c22;color:#fb923c;border-color:#ea580c33',
+          'markt.de': 'background:#e1195822;color:#fb7185;border-color:#e1195833',
+          'Wohnungsb\u00f6rse': 'background:#4f46e522;color:#818cf8;border-color:#4f46e533',
+        };
+
+        function escapeHtml(str) {
+          if (!str) return '';
+          const d = document.createElement('div');
+          d.textContent = str;
+          return d.innerHTML;
+        }
+
+        function formatDate(d) {
+          if (!d) return '';
+          try {
+            const dt = d.length === 10
+              ? new Date(d.split('-')[0], d.split('-')[1]-1, d.split('-')[2])
+              : new Date(d.replace(' ','T')+'Z');
+            const months = ['\u064a\u0646\u0627\u064a\u0631','\u0641\u0628\u0631\u0627\u064a\u0631','\u0645\u0627\u0631\u0633','\u0623\u0628\u0631\u064a\u0644','\u0645\u0627\u064a\u0648','\u064a\u0648\u0646\u064a\u0648','\u064a\u0648\u0644\u064a\u0648','\u0623\u063a\u0633\u0637\u0633','\u0633\u0628\u062a\u0645\u0628\u0631','\u0623\u0643\u062a\u0648\u0628\u0631','\u0646\u0648\u0641\u0645\u0628\u0631','\u062f\u064a\u0633\u0645\u0628\u0631'];
+            return dt.getDate() + ' ' + months[dt.getMonth()];
+          } catch(e) { return d; }
+        }
+
+        function openDetail(apt) {
+          const sc = sourceColors[apt.source] || 'background:#1e293b;color:#94a3b8;border-color:#334155';
+          const features = [
+            { key: 'noCommission', label: '\u0628\u062f\u0648\u0646 \u0639\u0645\u0648\u0644\u0629', icon: '\u2714\ufe0f' },
+            { key: 'furnished', label: '\u0645\u0641\u0631\u0648\u0634\u0629', icon: '\u{1f6cb}\ufe0f' },
+            { key: 'hasBalcony', label: '\u0628\u0644\u0643\u0648\u0646', icon: '\u{1f334}' },
+            { key: 'hasGarden', label: '\u062d\u062f\u064a\u0642\u0629', icon: '\u{1f333}' },
+            { key: 'hasParking', label: '\u0645\u0648\u0642\u0641 \u0633\u064a\u0627\u0631\u0629', icon: '\u{1f697}' },
+          ];
+
+          const imgHtml = apt.imageUrl
+            ? `<img class="adm-img" src="${escapeHtml(apt.imageUrl)}" onerror="this.outerHTML='<div class=adm-no-img>\u{1f3e0}</div>'">`
+            : '<div class="adm-no-img">\u{1f3e0}</div>';
+
+          const featHtml = features.map(f =>
+            `<span class="adm-feat ${apt[f.key] ? 'adm-feat-yes' : 'adm-feat-no'}">${f.icon} ${f.label}</span>`
+          ).join('');
+
+          const notesHtml = apt.notes
+            ? `<div class="adm-notes">${escapeHtml(apt.notes)}</div>`
+            : '';
+
+          modal.innerHTML = `
+            <div style="position:relative;">
+              ${imgHtml}
+              <button class="adm-close" onclick="closeAptDetail()">\u2715</button>
+            </div>
+            <div class="adm-body">
+              <span class="adm-source" style="${sc}">${escapeHtml(apt.source)}</span>
+              <h2 class="adm-title">${escapeHtml(apt.title)}</h2>
+              <div class="adm-address">\u{1f4cd} ${escapeHtml(apt.address || apt.area)}</div>
+              <div class="adm-stats">
+                <div class="adm-stat">
+                  <div class="adm-stat-val price">${apt.price || 0}\u20ac</div>
+                  <div class="adm-stat-label">\u0627\u0644\u0625\u064a\u062c\u0627\u0631 \u0627\u0644\u0634\u0647\u0631\u064a</div>
+                </div>
+                <div class="adm-stat">
+                  <div class="adm-stat-val">${apt.rooms || '\u2014'}</div>
+                  <div class="adm-stat-label">\u063a\u0631\u0641\u0629</div>
+                </div>
+                <div class="adm-stat">
+                  <div class="adm-stat-val">${apt.size ? apt.size + ' \u0645\u00b2' : '\u2014'}</div>
+                  <div class="adm-stat-label">\u0627\u0644\u0645\u0633\u0627\u062d\u0629</div>
+                </div>
+              </div>
+              <div class="adm-features">${featHtml}</div>
+              ${notesHtml}
+              <div class="adm-meta">
+                <span>\u{1f4c5} \u0623\u0636\u064a\u0641: ${formatDate(apt.addedAt)}</span>
+                ${apt.publishedAt ? '<span>\u{1f4cc} \u0646\u0634\u0631: ' + formatDate(apt.publishedAt) + '</span>' : ''}
+                <span>\u{1f4cd} ${escapeHtml(apt.area)}</span>
+                <span>\u{1f3f7}\ufe0f ${escapeHtml(apt.category)}</span>
+              </div>
+              <div class="adm-actions">
+                ${apt.url ? `<a href="${escapeHtml(apt.url)}" target="_blank" rel="noreferrer" class="adm-btn-primary">\u{1f310} \u0639\u0631\u0636 \u0639\u0644\u0649 ${escapeHtml(apt.source)}</a>` : ''}
+                <button class="adm-btn-secondary" onclick="closeAptDetail()">\u2716 \u0625\u063a\u0644\u0627\u0642</button>
+              </div>
+            </div>
+          `;
+          overlay.classList.add('active');
+          modal.classList.add('active');
+        }
+
+        window.closeAptDetail = function() {
+          overlay.classList.remove('active');
+          modal.classList.remove('active');
+          modal.innerHTML = '';
+        };
+
+        overlay.addEventListener('click', window.closeAptDetail);
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') window.closeAptDetail();
+        });
+
+        // Fetch apartment data for the modal
+        async function loadAptCache() {
+          try {
+            const res = await fetch('/api/apartments');
+            aptCache = await res.json();
+          } catch(e) {}
+        }
+        loadAptCache();
+        setInterval(loadAptCache, 30000);
+
+        // Attach click to cards
         function addCardClick() {
           document.querySelectorAll('[data-testid^="card-apartment-"]').forEach(card => {
             if (card.dataset.cardClickBound) return;
             card.dataset.cardClickBound = '1';
             card.addEventListener('click', function(e) {
-              // Don't trigger if clicking on buttons, links, inputs
               if (e.target.closest('button, a, input, select, textarea')) return;
-              const link = card.querySelector('a[target="_blank"]');
-              if (link && link.href) {
-                window.open(link.href, '_blank');
-              }
+              const testId = card.getAttribute('data-testid');
+              const id = testId ? parseInt(testId.replace('card-apartment-', '')) : null;
+              if (!id) return;
+              const apt = aptCache.find(a => a.id === id);
+              if (apt) openDetail(apt);
             });
           });
         }
