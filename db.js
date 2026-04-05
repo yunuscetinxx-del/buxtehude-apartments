@@ -49,6 +49,12 @@ async function getDb() {
       sources TEXT DEFAULT '[]'
     );
   `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT DEFAULT ''
+    );
+  `);
   
   // Add area column if it doesn't exist (migration)
   try {
@@ -57,10 +63,11 @@ async function getDb() {
     // Column already exists
   }
   
-  // Clean up apartments not in valid areas
-  db.run("DELETE FROM apartments WHERE LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%buxtehude%' AND LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%neukloster%' AND LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%neu wulmstorf%' AND LOWER(address || ' ' || title || ' ' || COALESCE(area,'')) NOT LIKE '%neu-wulmstorf%' AND LOWER(address) NOT LIKE '%21614%' AND LOWER(address) NOT LIKE '%21629%'");
-  // Clean up apartments that mention other cities in title
-  db.run("DELETE FROM apartments WHERE LOWER(title) LIKE '%berlin%' OR LOWER(title) LIKE '%spandau%' OR LOWER(title) LIKE '%hamburg%' OR LOWER(title) LIKE '%konstanz%' OR LOWER(title) LIKE '%olbernhau%' OR LOWER(title) LIKE '%hooksiel%' OR LOWER(title) LIKE '%münchen%' OR LOWER(title) LIKE '%köln%' OR LOWER(title) LIKE '%frankfurt%' OR LOWER(title) LIKE '%dresden%'");
+  // Initialize default settings if not set
+  const existing = db.exec("SELECT value FROM settings WHERE key = 'telegramAreas'");
+  if (!existing.length || !existing[0].values.length) {
+    db.run("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", ['telegramAreas', JSON.stringify(["Buxtehude"])]);
+  };
   
   saveDb();
   return db;
@@ -210,6 +217,17 @@ function getFetchHistory() {
   return { last: { fetchedAt, totalFound, newCount } };
 }
 
+function getSetting(key) {
+  const result = db.exec("SELECT value FROM settings WHERE key = ?", [key]);
+  if (!result.length || !result[0].values.length) return null;
+  return result[0].values[0][0];
+}
+
+function setSetting(key, value) {
+  db.run("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", [key, value]);
+  saveDb();
+}
+
 module.exports = {
   getDb,
   getAllApartments,
@@ -221,5 +239,7 @@ module.exports = {
   markAllNotNew,
   addFetchHistory,
   getFetchHistory,
+  getSetting,
+  setSetting,
   categorize,
 };

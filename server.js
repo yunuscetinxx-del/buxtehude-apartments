@@ -8,9 +8,6 @@ const telegram = require("./telegram");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Telegram notification areas preference (default: all areas)
-let telegramAreas = ["Buxtehude", "Neukloster", "Neu Wulmstorf"];
-
 app.use(express.json());
 
 // Serve static files (the React frontend)
@@ -120,7 +117,9 @@ app.post("/api/mark-all-seen", (_req, res) => {
 
 // Get Telegram notification settings
 app.get("/api/settings/telegram-areas", (_req, res) => {
-  res.json({ areas: telegramAreas });
+  const saved = db.getSetting('telegramAreas');
+  const areas = saved ? JSON.parse(saved) : ["Buxtehude"];
+  res.json({ areas });
 });
 
 // Update Telegram notification areas
@@ -130,9 +129,9 @@ app.post("/api/settings/telegram-areas", (req, res) => {
   if (!Array.isArray(areas) || areas.some(a => !validAreas.includes(a))) {
     return res.status(400).json({ error: "Invalid areas" });
   }
-  telegramAreas = areas;
-  console.log(`📱 Telegram areas updated: ${telegramAreas.join(", ") || "none"}`);
-  res.json({ areas: telegramAreas });
+  db.setSetting('telegramAreas', JSON.stringify(areas));
+  console.log(`📱 Telegram areas updated: ${areas.join(", ") || "none"}`);
+  res.json({ areas });
 });
 
 // SPA fallback - serve index.html for non-API routes
@@ -165,6 +164,8 @@ async function runFetch() {
 
   // Send Telegram notifications for new apartments (filtered by preferred areas)
   if (newApartments.length > 0) {
+    const saved = db.getSetting('telegramAreas');
+    const telegramAreas = saved ? JSON.parse(saved) : ["Buxtehude"];
     const telegramFiltered = newApartments.filter(a => telegramAreas.includes(a.area));
     if (telegramFiltered.length > 0) {
       console.log(`📱 Sending Telegram notifications for ${telegramFiltered.length} new apartments (filtered from ${newApartments.length})...`);
