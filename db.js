@@ -48,6 +48,10 @@ async function getDb() {
       sources TEXT DEFAULT '[]'
     );
   `);
+  
+  // Clean up non-Buxtehude apartments that may have slipped in
+  db.run("DELETE FROM apartments WHERE LOWER(address || ' ' || title) NOT LIKE '%buxtehude%' AND LOWER(address) NOT LIKE '%21614%'");
+  
   saveDb();
   return db;
 }

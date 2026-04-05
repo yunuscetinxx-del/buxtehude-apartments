@@ -47,6 +47,11 @@ function parseNumber(text) {
   return parseFloat(match[1].replace(",", ".")) || null;
 }
 
+function isBuxtehude(text) {
+  const lower = (text || "").toLowerCase();
+  return /buxtehude|21614/.test(lower);
+}
+
 function detectFeatures(text) {
   const lower = (text || "").toLowerCase();
   return {
@@ -114,6 +119,9 @@ async function scrapeKleinanzeigen() {
 
         if (/\bwg\b|wohngemeinschaft|mitbewohner/i.test(descText)) return;
 
+        // Only keep Buxtehude listings (skip promoted ads from other cities)
+        if (!isBuxtehude(address + ' ' + title)) return;
+
         results.push({
           externalId: `kleinanzeigen-${id}`,
           title,
@@ -178,6 +186,7 @@ async function scrapeWohnungsboerse() {
       const features = detectFeatures(allText);
 
       if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
+      if (!isBuxtehude(allText)) return;
 
       results.push({
         externalId: `wohnungsboerse-${id}`,
@@ -295,12 +304,17 @@ async function scrapeAll() {
     }
   }
 
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(
-    `\n✅ Scrape complete in ${elapsed}s: ${allResults.length} total listings found`
+  // Final safety filter: only Buxtehude apartments
+  const filtered = allResults.filter(a =>
+    isBuxtehude(a.title + ' ' + a.address)
   );
 
-  return { apartments: allResults, stats: sourceStats };
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(
+    `\n✅ Scrape complete in ${elapsed}s: ${filtered.length} Buxtehude listings (${allResults.length - filtered.length} non-Buxtehude filtered out)`
+  );
+
+  return { apartments: filtered, stats: sourceStats };
 }
 
 module.exports = { scrapeAll };
