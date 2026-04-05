@@ -8,6 +8,9 @@ const telegram = require("./telegram");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Track if this is the first fetch after server start
+let isFirstFetch = true;
+
 app.use(express.json());
 
 // Serve static files (the React frontend)
@@ -163,16 +166,25 @@ async function runFetch() {
   db.addFetchHistory(totalFound, newCount, stats);
 
   // Send Telegram notifications for new apartments (filtered by preferred areas)
+  // Skip mass notifications on first fetch after restart (DB was empty, all appear "new")
   if (newApartments.length > 0) {
-    const saved = db.getSetting('telegramAreas');
-    const telegramAreas = saved ? JSON.parse(saved) : ["Buxtehude"];
-    const telegramFiltered = newApartments.filter(a => telegramAreas.includes(a.area));
-    if (telegramFiltered.length > 0) {
-      console.log(`📱 Sending Telegram notifications for ${telegramFiltered.length} new apartments (filtered from ${newApartments.length})...`);
-      await telegram.notifyNewApartments(telegramFiltered);
+    if (isFirstFetch && newApartments.length > 5) {
+      console.log(`📱 First fetch after restart: ${newApartments.length} "new" apartments (skipping mass notification, DB was likely reset)`);
+      isFirstFetch = false;
     } else {
-      console.log(`📱 ${newApartments.length} new apartments but none in Telegram areas: ${telegramAreas.join(", ")}`);
+      isFirstFetch = false;
+      const saved = db.getSetting('telegramAreas');
+      const telegramAreas = saved ? JSON.parse(saved) : ["Buxtehude"];
+      const telegramFiltered = newApartments.filter(a => telegramAreas.includes(a.area));
+      if (telegramFiltered.length > 0) {
+        console.log(`📱 Sending Telegram notifications for ${telegramFiltered.length} new apartments (filtered from ${newApartments.length})...`);
+        await telegram.notifyNewApartments(telegramFiltered);
+      } else {
+        console.log(`📱 ${newApartments.length} new apartments but none in Telegram areas: ${telegramAreas.join(", ")}`);
+      }
     }
+  } else {
+    isFirstFetch = false;
   }
 
   console.log(
