@@ -8,6 +8,9 @@ const telegram = require("./telegram");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Telegram notification areas preference (default: all areas)
+let telegramAreas = ["Buxtehude", "Neukloster", "Neu Wulmstorf"];
+
 app.use(express.json());
 
 // Serve static files (the React frontend)
@@ -115,6 +118,23 @@ app.post("/api/mark-all-seen", (_req, res) => {
   }
 });
 
+// Get Telegram notification settings
+app.get("/api/settings/telegram-areas", (_req, res) => {
+  res.json({ areas: telegramAreas });
+});
+
+// Update Telegram notification areas
+app.post("/api/settings/telegram-areas", (req, res) => {
+  const { areas } = req.body;
+  const validAreas = ["Buxtehude", "Neukloster", "Neu Wulmstorf"];
+  if (!Array.isArray(areas) || areas.some(a => !validAreas.includes(a))) {
+    return res.status(400).json({ error: "Invalid areas" });
+  }
+  telegramAreas = areas;
+  console.log(`📱 Telegram areas updated: ${telegramAreas.join(", ") || "none"}`);
+  res.json({ areas: telegramAreas });
+});
+
 // SPA fallback - serve index.html for non-API routes
 app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
@@ -143,10 +163,15 @@ async function runFetch() {
   const totalFound = apartments.length;
   db.addFetchHistory(totalFound, newCount, stats);
 
-  // Send Telegram notifications for new apartments
+  // Send Telegram notifications for new apartments (filtered by preferred areas)
   if (newApartments.length > 0) {
-    console.log(`📱 Sending Telegram notifications for ${newApartments.length} new apartments...`);
-    await telegram.notifyNewApartments(newApartments);
+    const telegramFiltered = newApartments.filter(a => telegramAreas.includes(a.area));
+    if (telegramFiltered.length > 0) {
+      console.log(`📱 Sending Telegram notifications for ${telegramFiltered.length} new apartments (filtered from ${newApartments.length})...`);
+      await telegram.notifyNewApartments(telegramFiltered);
+    } else {
+      console.log(`📱 ${newApartments.length} new apartments but none in Telegram areas: ${telegramAreas.join(", ")}`);
+    }
   }
 
   console.log(

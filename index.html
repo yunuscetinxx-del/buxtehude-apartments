@@ -67,6 +67,76 @@
         border-radius: 10px;
         margin-right: 4px;
       }
+      /* Settings panel */
+      #settings-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #cbd5e1;
+        cursor: pointer;
+        font-family: 'Tajawal', sans-serif;
+        font-size: 13px;
+        transition: all 0.2s;
+        margin-right: 12px;
+      }
+      #settings-btn:hover { background: #334155; border-color: #f59e0b; }
+      #settings-panel {
+        display: none;
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10001;
+        background: #1e293b;
+        border: 2px solid #3b82f6;
+        border-radius: 16px;
+        padding: 24px 28px;
+        min-width: 320px;
+        font-family: 'Tajawal', sans-serif;
+        direction: rtl;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      }
+      #settings-panel h3 {
+        color: #f8fafc;
+        margin: 0 0 16px 0;
+        font-size: 18px;
+      }
+      #settings-panel label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #cbd5e1;
+        padding: 8px 0;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      #settings-panel input[type="checkbox"] {
+        width: 18px; height: 18px;
+        accent-color: #3b82f6;
+        cursor: pointer;
+      }
+      #settings-panel .save-btn {
+        margin-top: 16px;
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        background: #3b82f6;
+        color: #fff;
+        font-family: 'Tajawal', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      #settings-panel .save-btn:hover { background: #2563eb; }
+      #settings-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 10000;
+      }
     </style>
     <script>
       // Area filter: intercept fetch to add ?area= parameter
@@ -149,6 +219,17 @@
       <button class="area-btn" data-area="Buxtehude">Buxtehude</button>
       <button class="area-btn" data-area="Neukloster">Neukloster</button>
       <button class="area-btn" data-area="Neu Wulmstorf">Neu Wulmstorf</button>
+      <button id="settings-btn">⚙️ إشعارات التلغرام</button>
+    </div>
+    <div id="settings-overlay"></div>
+    <div id="settings-panel">
+      <h3>📱 إشعارات التلغرام</h3>
+      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px 0;">اختر المناطق اللي تريد تتلقى إشعارات تلغرام لها:</p>
+      <label><input type="checkbox" id="tg-buxtehude" value="Buxtehude"> Buxtehude</label>
+      <label><input type="checkbox" id="tg-neukloster" value="Neukloster"> Neukloster</label>
+      <label><input type="checkbox" id="tg-neuwulmstorf" value="Neu Wulmstorf"> Neu Wulmstorf</label>
+      <button class="save-btn" id="save-tg-settings">💾 حفظ الإعدادات</button>
+      <p id="tg-status" style="color:#22c55e;font-size:13px;text-align:center;margin:8px 0 0 0;display:none;"></p>
     </div>
     <div id="root"></div>
     <script>
@@ -184,6 +265,57 @@
           } catch(e) {}
         }
         setTimeout(loadCounts, 1000);
+      })();
+    </script>
+    <script>
+      // Telegram settings panel logic
+      (function() {
+        const settingsBtn = document.getElementById('settings-btn');
+        const panel = document.getElementById('settings-panel');
+        const overlay = document.getElementById('settings-overlay');
+        const saveBtn = document.getElementById('save-tg-settings');
+        const status = document.getElementById('tg-status');
+        const boxes = {
+          Buxtehude: document.getElementById('tg-buxtehude'),
+          Neukloster: document.getElementById('tg-neukloster'),
+          'Neu Wulmstorf': document.getElementById('tg-neuwulmstorf')
+        };
+
+        function openPanel() {
+          panel.style.display = 'block';
+          overlay.style.display = 'block';
+          status.style.display = 'none';
+          // Load current settings
+          fetch('/api/settings/telegram-areas').then(r => r.json()).then(data => {
+            Object.keys(boxes).forEach(k => {
+              boxes[k].checked = data.areas.includes(k);
+            });
+          }).catch(() => {});
+        }
+        function closePanel() {
+          panel.style.display = 'none';
+          overlay.style.display = 'none';
+        }
+
+        settingsBtn.addEventListener('click', openPanel);
+        overlay.addEventListener('click', closePanel);
+
+        saveBtn.addEventListener('click', () => {
+          const selected = Object.keys(boxes).filter(k => boxes[k].checked);
+          fetch('/api/settings/telegram-areas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ areas: selected })
+          }).then(r => r.json()).then(data => {
+            status.textContent = '✅ تم الحفظ! الإشعارات: ' + (data.areas.length ? data.areas.join(', ') : 'مغلقة');
+            status.style.display = 'block';
+            setTimeout(closePanel, 1500);
+          }).catch(() => {
+            status.textContent = '❌ فشل الحفظ';
+            status.style.display = 'block';
+            status.style.color = '#ef4444';
+          });
+        });
       })();
     </script>
   <script data-pplx-inline-edit>

@@ -298,6 +298,9 @@ async function scrapeMarktDe() {
 
         if (/\bwg\b|wohngemeinschaft/i.test(allText)) return;
 
+        // Only keep valid area listings
+        if (!isValidArea(allText + ' ' + title + ' ' + area.name)) return;
+
         results.push({
           externalId: `marktde-${id}`,
           title,
@@ -354,7 +357,7 @@ async function scrapeAll() {
 
   // Final safety filter: only valid area apartments
   const filtered = allResults.filter(a =>
-    isValidArea(a.title + ' ' + a.address) || a.area
+    isValidArea(a.title + ' ' + a.address + ' ' + (a.area || ''))
   );
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
