@@ -89,6 +89,15 @@ async function getDb() {
   // Fix source name: immowelt -> Immowelt
   try { db.run("UPDATE apartments SET source = 'Immowelt' WHERE source = 'immowelt'"); } catch (e) {}
   
+  // User backups table for per-email preference persistence
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_backups (
+      email TEXT PRIMARY KEY,
+      data TEXT DEFAULT '{}',
+      updatedAt TEXT DEFAULT (datetime('now'))
+    );
+  `);
+  
   saveDb();
   return db;
 }
@@ -309,6 +318,44 @@ function setSetting(key, value) {
   saveDb();
 }
 
+function saveUserBackup(email) {
+  if (!email) return;
+  const favResult = db.exec("SELECT externalId FROM apartments WHERE isFavorite = 1 AND isDeleted = 0");
+  const contResult = db.exec("SELECT externalId FROM apartments WHERE contacted = 1 AND isDeleted = 0");
+  const data = JSON.stringify({
+    favorites: favResult.length ? favResult[0].values.map(v => v[0]) : [],
+    contacted: contResult.length ? contResult[0].values.map(v => v[0]) : []
+  });
+  db.run("INSERT OR REPLACE INTO user_backups (email, data, updatedAt) VALUES (?, ?, datetime('now'))", [email, data]);
+  saveDb();
+}
+
+function restoreUserBackup(email) {
+  if (!email) return null;
+  const stmt = db.prepare("SELECT data FROM user_backups WHERE email = ?");
+  stmt.bind([email]);
+  if (!stmt.step()) { stmt.free(); return null; }
+  const row = stmt.getAsObject();
+  stmt.free();
+  const data = JSON.parse(row.data);
+  // Reset all preferences
+  db.run("UPDATE apartments SET isFavorite = 0, contacted = 0");
+  // Apply saved favorites by externalId
+  if (data.favorites && data.favorites.length) {
+    data.favorites.forEach(eid => {
+      db.run("UPDATE apartments SET isFavorite = 1 WHERE externalId = ?", [eid]);
+    });
+  }
+  // Apply saved contacted by externalId
+  if (data.contacted && data.contacted.length) {
+    data.contacted.forEach(eid => {
+      db.run("UPDATE apartments SET contacted = 1 WHERE externalId = ?", [eid]);
+    });
+  }
+  saveDb();
+  return data;
+}
+
 module.exports = {
   getDb,
   getAllApartments,
@@ -328,5 +375,7 @@ module.exports = {
   getFetchHistory,
   getSetting,
   setSetting,
+  saveUserBackup,
+  restoreUserBackup,
   categorize,
 };

@@ -345,7 +345,7 @@
       .adm-btn-secondary:hover { border-color: #3b82f6; color: #f8fafc; }
     </style>
     <script>
-      // Area filter: intercept fetch to add ?area= parameter
+      // Area filter + user email: intercept fetch to add ?area= parameter and X-User-Email header
       (function() {
         const currentArea = localStorage.getItem('selectedArea') || 'all';
         const originalFetch = window.fetch;
@@ -353,6 +353,19 @@
           if (typeof url === 'string' && url.includes('/api/apartments') && !url.includes('?area=') && !url.includes('&area=')) {
             const separator = url.includes('?') ? '&' : '?';
             url = url + separator + 'area=' + encodeURIComponent(currentArea);
+          }
+          // Add user email header for all API calls
+          if (typeof url === 'string' && url.includes('/api/')) {
+            const userEmail = localStorage.getItem('userEmail');
+            if (userEmail) {
+              options = options || {};
+              options.headers = options.headers || {};
+              if (options.headers instanceof Headers) {
+                options.headers.set('X-User-Email', userEmail);
+              } else {
+                options.headers['X-User-Email'] = userEmail;
+              }
+            }
           }
           return originalFetch.call(this, url, options);
         };
@@ -427,7 +440,7 @@
       <button class="area-btn" data-area="Neu Wulmstorf">Neu Wulmstorf</button>
       <button id="settings-btn">⚙️ إشعارات التلغرام</button>
       <button id="mark-seen-btn" class="area-btn" style="background:#065f46;border-color:#065f46;color:#fff;">👁 تم المشاهدة</button>
-      <button id="email-fav-btn" class="area-btn" style="background:#1e3a5f;border-color:#3b82f6;color:#93c5fd;">📧 إرسال المفضلة</button>
+      <button id="login-btn" class="area-btn" style="background:#1e3a5f;border-color:#3b82f6;color:#93c5fd;">🔑 تسجيل دخول</button>
       <button id="deleted-btn" class="area-btn" style="background:#7f1d1d;border-color:#991b1b;color:#fca5a5;">🗑️ المحذوفة <span id="deleted-count" class="area-count">0</span></button>
     </div>
     <div id="settings-overlay"></div>
@@ -451,14 +464,15 @@
       <button class="lb-nav lb-next" onclick="lbNav(1)">&#8249;</button>
       <div class="lb-counter"><span id="lb-idx">1</span> / <span id="lb-total">1</span></div>
     </div>
-    <!-- Email favorites modal -->
-    <div id="email-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10015;"></div>
-    <div id="email-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10016;background:#1e293b;border:2px solid #3b82f6;border-radius:16px;padding:24px 28px;min-width:340px;font-family:'Tajawal',sans-serif;direction:rtl;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-      <h3 style="color:#f8fafc;margin:0 0 12px 0;font-size:18px;">📧 إرسال المفضلة بالإيميل</h3>
-      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px 0;">أدخل إيميلك وسيتم إرسال قائمة الشقق المفضلة</p>
-      <input id="email-input" type="email" placeholder="example@email.com" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:'Tajawal',sans-serif;font-size:14px;margin-bottom:12px;direction:ltr;text-align:left;" />
-      <button id="send-email-btn" style="width:100%;padding:10px;border-radius:10px;border:none;background:#3b82f6;color:#fff;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">📤 إرسال</button>
-      <p id="email-status" style="color:#22c55e;font-size:13px;text-align:center;margin:8px 0 0 0;display:none;"></p>
+    <!-- Login modal -->
+    <div id="login-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10015;"></div>
+    <div id="login-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10016;background:#1e293b;border:2px solid #3b82f6;border-radius:16px;padding:24px 28px;min-width:340px;font-family:'Tajawal',sans-serif;direction:rtl;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <h3 style="color:#f8fafc;margin:0 0 12px 0;font-size:18px;">🔑 تسجيل الدخول</h3>
+      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px 0;">أدخل إيميلك لحفظ واسترجاع المفضلات والتواصل</p>
+      <input id="login-email" type="email" placeholder="example@email.com" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:'Tajawal',sans-serif;font-size:14px;margin-bottom:12px;direction:ltr;text-align:left;box-sizing:border-box;" />
+      <button id="login-submit" style="width:100%;padding:10px;border-radius:10px;border:none;background:#3b82f6;color:#fff;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">🔑 دخول</button>
+      <button id="logout-btn" style="display:none;width:100%;padding:10px;border-radius:10px;border:1px solid #ef4444;background:transparent;color:#fca5a5;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;">🚪 تسجيل خروج</button>
+      <p id="login-status" style="color:#22c55e;font-size:13px;text-align:center;margin:8px 0 0 0;display:none;"></p>
     </div>
     <div id="root"></div>
     <script>
@@ -567,33 +581,53 @@
       })();
     </script>
     <script>
-      // Email favorites feature
+      // User login system - save/restore favorites & contacted per email
       (function() {
-        const btn = document.getElementById('email-fav-btn');
-        const panel = document.getElementById('email-panel');
-        const overlay = document.getElementById('email-overlay');
-        const input = document.getElementById('email-input');
-        const sendBtn = document.getElementById('send-email-btn');
-        const status = document.getElementById('email-status');
+        const btn = document.getElementById('login-btn');
+        const panel = document.getElementById('login-panel');
+        const overlay = document.getElementById('login-overlay');
+        const input = document.getElementById('login-email');
+        const submitBtn = document.getElementById('login-submit');
+        const logoutBtn = document.getElementById('logout-btn');
+        const status = document.getElementById('login-status');
 
         // Load saved email
         const savedEmail = localStorage.getItem('userEmail') || '';
         if (input) input.value = savedEmail;
 
-        function openEmailPanel() {
+        // Update button text if logged in
+        function updateLoginBtn() {
+          const email = localStorage.getItem('userEmail');
+          if (email) {
+            btn.textContent = '👤 ' + email.split('@')[0];
+            btn.style.background = '#065f46';
+            btn.style.borderColor = '#059669';
+            logoutBtn.style.display = 'block';
+            submitBtn.textContent = '🔄 استرجاع البيانات';
+          } else {
+            btn.textContent = '🔑 تسجيل دخول';
+            btn.style.background = '#1e3a5f';
+            btn.style.borderColor = '#3b82f6';
+            logoutBtn.style.display = 'none';
+            submitBtn.textContent = '🔑 دخول';
+          }
+        }
+        updateLoginBtn();
+
+        function openPanel() {
           panel.style.display = 'block';
           overlay.style.display = 'block';
           status.style.display = 'none';
         }
-        function closeEmailPanel() {
+        function closePanel() {
           panel.style.display = 'none';
           overlay.style.display = 'none';
         }
 
-        btn.addEventListener('click', openEmailPanel);
-        overlay.addEventListener('click', closeEmailPanel);
+        btn.addEventListener('click', openPanel);
+        overlay.addEventListener('click', closePanel);
 
-        sendBtn.addEventListener('click', async () => {
+        submitBtn.addEventListener('click', async () => {
           const email = input.value.trim();
           if (!email || !email.includes('@')) {
             status.textContent = '❌ أدخل إيميل صحيح';
@@ -601,31 +635,48 @@
             status.style.display = 'block';
             return;
           }
-          localStorage.setItem('userEmail', email);
-          sendBtn.textContent = '⏳ جاري الإرسال...';
-          sendBtn.disabled = true;
+          submitBtn.disabled = true;
+          submitBtn.textContent = '⏳ جاري التحميل...';
           try {
-            const res = await fetch('/api/email-favorites', {
+            const res = await fetch('/api/user/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email })
             });
             const data = await res.json();
             if (data.success) {
-              status.textContent = '✅ تم الإرسال! تحقق من بريدك';
+              localStorage.setItem('userEmail', email);
+              if (data.restored) {
+                status.textContent = '✅ تم استرجاع ' + data.favorites + ' مفضلة و ' + data.contacted + ' تواصل';
+              } else {
+                status.textContent = '✅ تم تسجيل الدخول - سيتم حفظ بياناتك تلقائياً';
+              }
               status.style.color = '#22c55e';
+              status.style.display = 'block';
+              updateLoginBtn();
+              setTimeout(() => { closePanel(); location.reload(); }, 1500);
             } else {
-              status.textContent = data.error || '❌ فشل الإرسال';
+              status.textContent = data.error || '❌ فشل تسجيل الدخول';
               status.style.color = '#ef4444';
+              status.style.display = 'block';
             }
           } catch(e) {
-            status.textContent = '❌ خطأ في الإرسال';
+            status.textContent = '❌ خطأ في الاتصال';
             status.style.color = '#ef4444';
+            status.style.display = 'block';
           }
+          submitBtn.disabled = false;
+          updateLoginBtn();
+        });
+
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('userEmail');
+          input.value = '';
+          updateLoginBtn();
+          status.textContent = '👋 تم تسجيل الخروج';
+          status.style.color = '#94a3b8';
           status.style.display = 'block';
-          sendBtn.textContent = '📤 إرسال';
-          sendBtn.disabled = false;
-          setTimeout(closeEmailPanel, 2500);
+          setTimeout(closePanel, 1200);
         });
       })();
     </script>

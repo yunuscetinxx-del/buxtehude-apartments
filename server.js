@@ -53,6 +53,9 @@ app.patch("/api/apartments/:id/favorite", (req, res) => {
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
     const apt = db.toggleFavorite(id);
     if (!apt) return res.status(404).json({ error: "Apartment not found" });
+    // Auto-save user backup if email header present
+    const email = req.headers['x-user-email'];
+    if (email) db.saveUserBackup(email);
     res.json(apt);
   } catch (err) {
     console.error("Error toggling favorite:", err);
@@ -67,6 +70,9 @@ app.patch("/api/apartments/:id/contacted", (req, res) => {
     if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
     const apt = db.toggleContacted(id);
     if (!apt) return res.status(404).json({ error: "Apartment not found" });
+    // Auto-save user backup if email header present
+    const email = req.headers['x-user-email'];
+    if (email) db.saveUserBackup(email);
     res.json(apt);
   } catch (err) {
     console.error("Error toggling contacted:", err);
@@ -156,64 +162,39 @@ app.post("/api/mark-all-seen", (_req, res) => {
   }
 });
 
-// Email favorites to user
-app.post("/api/email-favorites", async (req, res) => {
+// User login - restore preferences from backup
+app.post("/api/user/login", (req, res) => {
   try {
     const { email } = req.body;
     if (!email || !email.includes('@')) {
       return res.status(400).json({ error: "إيميل غير صالح" });
     }
-    const allApts = db.getAllApartments("all");
-    const favorites = allApts.filter(a => a.isFavorite);
-    const contacted = allApts.filter(a => a.contacted);
-    if (favorites.length === 0 && contacted.length === 0) {
-      return res.json({ success: false, error: "لا توجد شقق مفضلة أو تم التواصل معها" });
+    const data = db.restoreUserBackup(email);
+    if (data) {
+      res.json({ success: true, restored: true, favorites: data.favorites?.length || 0, contacted: data.contacted?.length || 0 });
+    } else {
+      // First login - save current state for this email
+      db.saveUserBackup(email);
+      res.json({ success: true, restored: false, message: "تم تسجيل الدخول - سيتم حفظ بياناتك تلقائياً" });
     }
-    let html = '<div dir="rtl" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">';
-    html += '<h2 style="color:#3b82f6;">🏠 شقق بوكستيهودة - المفضلة</h2>';
-    if (favorites.length > 0) {
-      html += '<h3 style="color:#f59e0b;">⭐ المفضلة (' + favorites.length + ')</h3>';
-      favorites.forEach(a => {
-        html += '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin:8px 0;background:#f8fafc;">';
-        html += '<strong>' + (a.title || 'بدون عنوان') + '</strong><br>';
-        html += '💰 ' + (a.price || 0) + '€ | 🏠 ' + (a.rooms || '-') + ' غرف | 📐 ' + (a.size || '-') + ' م²<br>';
-        html += '📍 ' + (a.address || a.area || '') + '<br>';
-        if (a.url) html += '<a href="' + a.url + '" style="color:#3b82f6;">🔗 عرض الإعلان</a>';
-        html += '</div>';
-      });
-    }
-    if (contacted.length > 0) {
-      html += '<h3 style="color:#22c55e;">✓ تم التواصل (' + contacted.length + ')</h3>';
-      contacted.forEach(a => {
-        html += '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin:8px 0;background:#f0fdf4;">';
-        html += '<strong>' + (a.title || 'بدون عنوان') + '</strong><br>';
-        html += '💰 ' + (a.price || 0) + '€ | 🏠 ' + (a.rooms || '-') + ' غرف | 📐 ' + (a.size || '-') + ' م²<br>';
-        html += '📍 ' + (a.address || a.area || '') + '<br>';
-        if (a.url) html += '<a href="' + a.url + '" style="color:#3b82f6;">🔗 عرض الإعلان</a>';
-        html += '</div>';
-      });
-    }
-    html += '<p style="color:#94a3b8;font-size:12px;margin-top:20px;text-align:center;">أُرسل من تطبيق شقق بوكستيهودة 2026</p>';
-    html += '</div>';
+  } catch (err) {
+    console.error("Error in user login:", err);
+    res.status(500).json({ error: "فشل تسجيل الدخول" });
+  }
+});
 
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: '⭐ شققك المفضلة في بوكستيهودة (' + favorites.length + ' مفضلة)',
-      html: html
-    });
+// User manual save
+app.post("/api/user/save", (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: "إيميل غير صالح" });
+    }
+    db.saveUserBackup(email);
     res.json({ success: true });
   } catch (err) {
-    console.error("Error sending email:", err);
-    res.status(500).json({ success: false, error: "فشل الإرسال - تحقق من الإعدادات" });
+    console.error("Error saving user backup:", err);
+    res.status(500).json({ error: "فشل الحفظ" });
   }
 });
 
