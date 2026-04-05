@@ -83,6 +83,9 @@ async function getDb() {
   // Image column
   try { db.run("ALTER TABLE apartments ADD COLUMN imageUrl TEXT DEFAULT ''"); } catch (e) {}
   
+  // Fix source name: immowelt -> Immowelt
+  try { db.run("UPDATE apartments SET source = 'Immowelt' WHERE source = 'immowelt'"); } catch (e) {}
+  
   saveDb();
   return db;
 }

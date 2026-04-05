@@ -448,7 +448,7 @@ async function scrapeImmowelt() {
           price,
           rooms: roomsMatch ? parseNumber(roomsMatch[1]) : null,
           size: sizeMatch ? parseNumber(sizeMatch[1]) : null,
-          source: "immowelt",
+          source: "Immowelt",
           url: fullUrl,
           area: detectedArea,
           imageUrl: imageUrl.startsWith("http") ? imageUrl : "",
