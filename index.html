@@ -274,11 +274,18 @@
         function markAllSeen() {
           fetch('/api/mark-all-seen', { method: 'POST' })
             .then(() => {
-              // Refresh the React app data
               const btn = document.getElementById('mark-seen-btn');
               if (btn) { btn.textContent = '✅ تم'; btn.style.background = '#166534'; }
-              // Trigger React Query refetch
-              setTimeout(() => location.reload(), 1000);
+              // Remove red glow without reloading - just remove the CSS classes
+              document.querySelectorAll('[class*="ring-red"], [class*="border-red"], [class*="shadow-red"], [class*="animate-pulse"]').forEach(el => {
+                el.className = el.className.replace(/\bring-2\b/g, '').replace(/\bring-red-500\b/g, '').replace(/\bborder-red-500\b/g, '').replace(/\bshadow-red-500\/20\b/g, '').replace(/\banimate-pulse\b/g, '');
+                el.style.animation = 'none';
+                el.style.boxShadow = 'none';
+              });
+              // Also remove any pulse-red animations
+              document.querySelectorAll('[style*="pulse-red"]').forEach(el => {
+                el.style.animation = 'none';
+              });
             })
             .catch(() => {});
         }
