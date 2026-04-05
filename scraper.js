@@ -19,6 +19,7 @@ async function fetchPage(url) {
     const res = await fetch(url, {
       headers: HEADERS,
       signal: controller.signal,
+      redirect: "follow",
     });
     clearTimeout(timeout);
 
@@ -388,11 +389,14 @@ async function scrapeImmowelt() {
 
     const $ = cheerio.load(html);
 
-    // Find expose links
-    $('a[href*="/expose/"]').each((_, el) => {
+    // Each listing card has data-testid="serp-core-classified-card-testid"
+    $('[data-testid="serp-core-classified-card-testid"]').each((_, el) => {
       try {
-        const $a = $(el);
-        const link = $a.attr("href") || "";
+        const $card = $(el);
+
+        // Get expose link and ID
+        const $link = $card.find('a[href*="/expose/"]').first();
+        const link = $link.attr("href") || "";
         const idMatch = link.match(/\/expose\/([a-z0-9-]+)/i);
         if (!idMatch) return;
         const id = idMatch[1];
@@ -403,43 +407,37 @@ async function scrapeImmowelt() {
           ? link.split("?")[0].split("#")[0]
           : `https://www.immowelt.de${link.split("?")[0].split("#")[0]}`;
 
-        // Get the card text from the link or its parent
-        const $card = $a;
-        const allText = $card.text().trim();
-        if (!allText || allText.length < 10) return;
-
-        // Extract title (first meaningful text line)
-        const titleMatch = allText.match(/((?:Wohnung|Studio|Maisonette|Penthouse|Terrassenwohnung|Etagenwohnung|Erdgeschosswohnung|Dachgeschosswohnung|WG-Zimmer)[^\n]*)/i);
-        const title = titleMatch ? titleMatch[1].trim() : "";
-        if (!title) return;
-
-        // Skip WG
-        if (/\bwg\b|wg-zimmer|wohngemeinschaft/i.test(allText)) return;
-
-        // Extract price
-        const priceMatch = allText.match(/([\d.,]+)\s*€/);
+        // Price from dedicated element: "945 €Kaltmiete" or "1.900 €Kaltmiete"
+        const priceText = $card.find('[data-testid="cardmfe-price-testid"]').text().trim();
+        const priceMatch = priceText.match(/([\d.,]+)\s*€/);
         const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
 
-        // Extract rooms
-        const roomsMatch = allText.match(/([\d,]+)\s*Zimmer/i);
-        // Extract size
-        const sizeMatch = allText.match(/([\d.,]+)\s*m²/i);
+        // Key facts: "3 Zimmer·72,3 m²·EG" or "4 Zimmer·142,2 m²·frei ab 01.08.2026"
+        const factsText = $card.find('[data-testid="cardmfe-keyfacts-testid"]').text().trim();
+        const roomsMatch = factsText.match(/([\d,]+)\s*Zimmer/i);
+        const sizeMatch = factsText.match(/([\d.,]+)\s*m²/i);
 
-        // Extract address from text
-        const addressMatch = allText.match(/(?:frei ab[^\n]*\n|Geschoss\s*)([^\n]*(?:Buxtehude|Neukloster|Neu.?Wulmstorf)[^\n]*)/i) 
-          || allText.match(/((?:[A-ZÄÖÜa-zäöüß][\w\s.-]*,\s*)?(?:Buxtehude|Neukloster|Neu.?Wulmstorf)[^\n]*)/i);
-        const address = addressMatch ? addressMatch[1].trim().replace(/\s+/g, ' ') : area.name;
+        // Address from dedicated element
+        const address = $card.find('[data-testid="cardmfe-description-box-address"]').text().trim() || area.name;
+
+        // Title from description box: "1.900 €KaltmieteWohnung zur Miete3 Zimmer..."
+        const descBox = $card.find('[data-testid="cardmfe-description-box-text-test-id"]').text().trim();
+        const titleMatch = descBox.match(/(?:€\s*(?:Kalt|Warm)?miete\s*)((?:Wohnung|Studio|Maisonette|Penthouse|Terrassenwohnung|Etagenwohnung|Erdgeschosswohnung|Dachgeschosswohnung|Apartment|Souterrainwohnung)(?:\s+zur\s+Miete)?(?:\s*-\s*[^\d€]+)?)/i);
+        const title = titleMatch ? titleMatch[1].trim() : "Wohnung zur Miete";
+
+        // Skip WG
+        if (/\bwg\b|wg-zimmer|wohngemeinschaft/i.test(descBox)) return;
 
         // Validate area
-        if (!isValidArea(allText)) return;
+        if (!isValidArea(address) && !isValidArea(descBox)) return;
         if (titleHasForeignLocation(title)) return;
 
-        const detectedArea = detectArea(allText) || area.name;
-        const features = detectFeatures(allText);
+        const detectedArea = detectArea(address + " " + descBox) || area.name;
+        const features = detectFeatures(descBox);
 
         // Extract image
         const imgEl = $card.find("img").first();
-        const imageUrl = imgEl.attr("src") || "";
+        const imageUrl = imgEl.attr("src") || imgEl.attr("data-src") || "";
 
         results.push({
           externalId: `immowelt-${id}`,
@@ -460,7 +458,7 @@ async function scrapeImmowelt() {
     });
   }
 
-  console.log(`    ✅ immowelt: ${results.length} listings`);
+  console.log(`    ✅ Immowelt: ${results.length} listings`);
   return results;
 }
 
