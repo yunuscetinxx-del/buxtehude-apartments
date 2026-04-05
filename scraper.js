@@ -182,6 +182,10 @@ async function scrapeKleinanzeigen() {
 
           const detectedArea = detectArea(address + ' ' + title) || area.name;
 
+          // Extract image
+          const imgEl = $el.find(".aditem-image img, .imagebox img, img").first();
+          const imageUrl = imgEl.attr("src") || imgEl.attr("data-src") || "";
+
           results.push({
             externalId: `kleinanzeigen-${id}`,
             title,
@@ -192,6 +196,7 @@ async function scrapeKleinanzeigen() {
             source: "Kleinanzeigen",
             url: fullUrl,
             area: detectedArea,
+            imageUrl: imageUrl.startsWith("http") ? imageUrl : "",
             ...features,
           });
           pageCount++;
@@ -254,6 +259,10 @@ async function scrapeWohnungsboerse() {
 
         const detectedArea = detectArea(allText) || area.name;
 
+        // Extract image
+        const wbImg = $el.find("img").first();
+        const wbImageUrl = wbImg.attr("src") || wbImg.attr("data-src") || "";
+
         results.push({
           externalId: `wohnungsboerse-${id}`,
           title,
@@ -261,9 +270,10 @@ async function scrapeWohnungsboerse() {
           price,
           rooms: roomsMatch ? parseNumber(roomsMatch[1]) : null,
           size: sizeMatch ? parseNumber(sizeMatch[1]) : null,
-          source: "Wohnungsbörse",
+          source: "Wohnungsb\u00f6rse",
           url: fullUrl,
           area: detectedArea,
+          imageUrl: wbImageUrl.startsWith("http") ? wbImageUrl : "",
           ...features,
         });
       } catch (e) {
@@ -337,6 +347,10 @@ async function scrapeMarktDe() {
           publishedAt = `${dateMatch[3]}-${dateMatch[2].padStart(2,"0")}-${dateMatch[1].padStart(2,"0")}`;
         }
 
+        // Extract image
+        const marktImg = $card.find("img").first();
+        const marktImageUrl = marktImg.attr("src") || marktImg.attr("data-src") || "";
+
         results.push({
           externalId: `marktde-${id}`,
           title,
@@ -348,6 +362,7 @@ async function scrapeMarktDe() {
           url: fullUrl,
           area: detectedArea,
           publishedAt,
+          imageUrl: marktImageUrl.startsWith("http") ? marktImageUrl : "",
           ...features,
         });
       } catch (e) {
@@ -360,6 +375,95 @@ async function scrapeMarktDe() {
   return results;
 }
 
+// ==================== immowelt.de ====================
+async function scrapeImmowelt() {
+  console.log("  📡 immowelt.de...");
+  const results = [];
+  const seenIds = new Set();
+
+  for (const area of AREAS) {
+    const url = `https://www.immowelt.de/liste/${area.markt}/wohnungen/mieten`;
+    const html = await fetchPage(url);
+    if (!html) continue;
+
+    const $ = cheerio.load(html);
+
+    // Find expose links
+    $('a[href*="/expose/"]').each((_, el) => {
+      try {
+        const $a = $(el);
+        const link = $a.attr("href") || "";
+        const idMatch = link.match(/\/expose\/([a-z0-9-]+)/i);
+        if (!idMatch) return;
+        const id = idMatch[1];
+        if (seenIds.has(id)) return;
+        seenIds.add(id);
+
+        const fullUrl = link.startsWith("http")
+          ? link.split("?")[0].split("#")[0]
+          : `https://www.immowelt.de${link.split("?")[0].split("#")[0]}`;
+
+        // Get the card text from the link or its parent
+        const $card = $a;
+        const allText = $card.text().trim();
+        if (!allText || allText.length < 10) return;
+
+        // Extract title (first meaningful text line)
+        const titleMatch = allText.match(/((?:Wohnung|Studio|Maisonette|Penthouse|Terrassenwohnung|Etagenwohnung|Erdgeschosswohnung|Dachgeschosswohnung|WG-Zimmer)[^\n]*)/i);
+        const title = titleMatch ? titleMatch[1].trim() : "";
+        if (!title) return;
+
+        // Skip WG
+        if (/\bwg\b|wg-zimmer|wohngemeinschaft/i.test(allText)) return;
+
+        // Extract price
+        const priceMatch = allText.match(/([\d.,]+)\s*€/);
+        const price = priceMatch ? parsePrice(priceMatch[1]) : 0;
+
+        // Extract rooms
+        const roomsMatch = allText.match(/([\d,]+)\s*Zimmer/i);
+        // Extract size
+        const sizeMatch = allText.match(/([\d.,]+)\s*m²/i);
+
+        // Extract address from text
+        const addressMatch = allText.match(/(?:frei ab[^\n]*\n|Geschoss\s*)([^\n]*(?:Buxtehude|Neukloster|Neu.?Wulmstorf)[^\n]*)/i) 
+          || allText.match(/((?:[A-ZÄÖÜa-zäöüß][\w\s.-]*,\s*)?(?:Buxtehude|Neukloster|Neu.?Wulmstorf)[^\n]*)/i);
+        const address = addressMatch ? addressMatch[1].trim().replace(/\s+/g, ' ') : area.name;
+
+        // Validate area
+        if (!isValidArea(allText)) return;
+        if (titleHasForeignLocation(title)) return;
+
+        const detectedArea = detectArea(allText) || area.name;
+        const features = detectFeatures(allText);
+
+        // Extract image
+        const imgEl = $card.find("img").first();
+        const imageUrl = imgEl.attr("src") || "";
+
+        results.push({
+          externalId: `immowelt-${id}`,
+          title,
+          address,
+          price,
+          rooms: roomsMatch ? parseNumber(roomsMatch[1]) : null,
+          size: sizeMatch ? parseNumber(sizeMatch[1]) : null,
+          source: "immowelt",
+          url: fullUrl,
+          area: detectedArea,
+          imageUrl: imageUrl.startsWith("http") ? imageUrl : "",
+          ...features,
+        });
+      } catch (e) {
+        /* skip */
+      }
+    });
+  }
+
+  console.log(`    ✅ immowelt: ${results.length} listings`);
+  return results;
+}
+
 // ==================== Main scrape function ====================
 async function scrapeAll() {
   console.log("\n🔍 Starting apartment scrape...");
@@ -369,6 +473,7 @@ async function scrapeAll() {
     scrapeKleinanzeigen,
     scrapeWohnungsboerse,
     scrapeMarktDe,
+    scrapeImmowelt,
   ];
 
   const allResults = [];

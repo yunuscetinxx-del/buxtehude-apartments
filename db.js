@@ -72,9 +72,16 @@ async function getDb() {
   // Add publishedAt column if it doesn't exist
   try {
     db.run("ALTER TABLE apartments ADD COLUMN publishedAt TEXT DEFAULT ''");
-  } catch (e) {
-    // Column already exists
-  };
+  } catch (e) {}
+
+  // Soft delete columns
+  try { db.run("ALTER TABLE apartments ADD COLUMN isDeleted INTEGER DEFAULT 0"); } catch (e) {}
+  try { db.run("ALTER TABLE apartments ADD COLUMN deletedBy TEXT DEFAULT ''"); } catch (e) {}
+  try { db.run("ALTER TABLE apartments ADD COLUMN deletedAt TEXT DEFAULT ''"); } catch (e) {}
+  try { db.run("ALTER TABLE apartments ADD COLUMN missedCount INTEGER DEFAULT 0"); } catch (e) {}
+
+  // Image column
+  try { db.run("ALTER TABLE apartments ADD COLUMN imageUrl TEXT DEFAULT ''"); } catch (e) {}
   
   saveDb();
   return db;
@@ -103,6 +110,7 @@ function rowToApartment(row, cols) {
   obj.hasBalcony = !!obj.hasBalcony;
   obj.hasGarden = !!obj.hasGarden;
   obj.hasParking = !!obj.hasParking;
+  obj.isDeleted = !!obj.isDeleted;
   return obj;
 }
 
@@ -132,9 +140,9 @@ function queryOne(sql, params = []) {
 
 function getAllApartments(area) {
   if (area && area !== 'all') {
-    return queryAll("SELECT * FROM apartments WHERE area = ? ORDER BY addedAt DESC", [area]);
+    return queryAll("SELECT * FROM apartments WHERE isDeleted = 0 AND area = ? ORDER BY addedAt DESC", [area]);
   }
-  return queryAll("SELECT * FROM apartments ORDER BY addedAt DESC");
+  return queryAll("SELECT * FROM apartments WHERE isDeleted = 0 ORDER BY addedAt DESC");
 }
 
 function getApartment(id) {
@@ -143,18 +151,30 @@ function getApartment(id) {
 
 function upsertApartment(apt) {
   const existing = queryOne(
-    "SELECT id FROM apartments WHERE externalId = ?",
+    "SELECT id, isDeleted, deletedBy FROM apartments WHERE externalId = ?",
     [apt.externalId]
   );
 
   if (existing) {
+    // Reset missedCount since we found it again
+    db.run("UPDATE apartments SET missedCount = 0 WHERE id = ?", [existing.id]);
+    // If it was platform-deleted and now found again, restore it
+    if (existing.isDeleted && existing.deletedBy === 'platform') {
+      db.run("UPDATE apartments SET isDeleted = 0, deletedBy = '', deletedAt = '', isNew = 1 WHERE id = ?", [existing.id]);
+      saveDb();
+      return { inserted: true, id: existing.id, restored: true };
+    }
+    // Update imageUrl if we have one and existing doesn't
+    if (apt.imageUrl) {
+      db.run("UPDATE apartments SET imageUrl = ? WHERE id = ? AND (imageUrl IS NULL OR imageUrl = '')", [apt.imageUrl, existing.id]);
+    }
     return { inserted: false, id: existing.id };
   }
 
   const category = categorize(apt.price);
   db.run(
-    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area, publishedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO apartments (externalId, title, address, price, rooms, size, source, category, url, noCommission, furnished, hasBalcony, hasGarden, hasParking, area, publishedAt, imageUrl)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       apt.externalId,
       apt.title || "بدون عنوان",
@@ -172,6 +192,7 @@ function upsertApartment(apt) {
       apt.hasParking ? 1 : 0,
       apt.area || "Buxtehude",
       apt.publishedAt || "",
+      apt.imageUrl || "",
     ]
   );
 
@@ -199,7 +220,40 @@ function toggleContacted(id) {
 }
 
 function deleteApartment(id) {
+  db.run("UPDATE apartments SET isDeleted = 1, deletedBy = 'user', deletedAt = datetime('now') WHERE id = ?", [id]);
+  saveDb();
+}
+
+function getDeletedApartments() {
+  return queryAll("SELECT * FROM apartments WHERE isDeleted = 1 ORDER BY deletedAt DESC");
+}
+
+function restoreApartment(id) {
+  db.run("UPDATE apartments SET isDeleted = 0, deletedBy = '', deletedAt = '' WHERE id = ?", [id]);
+  saveDb();
+  return getApartment(id);
+}
+
+function permanentlyDeleteApartment(id) {
   db.run("DELETE FROM apartments WHERE id = ?", [id]);
+  saveDb();
+}
+
+function incrementMissedCount(source, foundExternalIds) {
+  // For apartments from this source that were NOT found, increment missedCount
+  const placeholders = foundExternalIds.map(() => '?').join(',');
+  if (foundExternalIds.length > 0) {
+    db.run(
+      `UPDATE apartments SET missedCount = missedCount + 1 WHERE source = ? AND isDeleted = 0 AND externalId NOT IN (${placeholders})`,
+      [source, ...foundExternalIds]
+    );
+  } else {
+    db.run("UPDATE apartments SET missedCount = missedCount + 1 WHERE source = ? AND isDeleted = 0", [source]);
+  }
+  // Mark as platform-deleted if missed 6+ times (1 hour of 10-min checks)
+  db.run(
+    "UPDATE apartments SET isDeleted = 1, deletedBy = 'platform', deletedAt = datetime('now') WHERE missedCount >= 6 AND isDeleted = 0 AND deletedBy = ''"
+  );
   saveDb();
 }
 
@@ -253,6 +307,10 @@ module.exports = {
   toggleFavorite,
   toggleContacted,
   deleteApartment,
+  getDeletedApartments,
+  restoreApartment,
+  permanentlyDeleteApartment,
+  incrementMissedCount,
   markAllNotNew,
   updatePublishedAt,
   getKaListingsMissingDate,

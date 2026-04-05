@@ -221,6 +221,7 @@
       <button class="area-btn" data-area="Neu Wulmstorf">Neu Wulmstorf</button>
       <button id="settings-btn">⚙️ إشعارات التلغرام</button>
       <button id="mark-seen-btn" class="area-btn" style="background:#065f46;border-color:#065f46;color:#fff;">👁 تم المشاهدة</button>
+      <button id="deleted-btn" class="area-btn" style="background:#7f1d1d;border-color:#991b1b;color:#fca5a5;">🗑️ المحذوفة <span id="deleted-count" class="area-count">0</span></button>
     </div>
     <div id="settings-overlay"></div>
     <div id="settings-panel">
@@ -347,6 +348,140 @@
             status.style.color = '#ef4444';
           });
         });
+      })();
+    </script>
+    <!-- Deleted apartments panel -->
+    <div id="deleted-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10002;"></div>
+    <div id="deleted-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10003;background:#1e293b;border:2px solid #ef4444;border-radius:16px;padding:24px;width:90%;max-width:700px;max-height:80vh;overflow-y:auto;font-family:'Tajawal',sans-serif;direction:rtl;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="color:#f8fafc;margin:0;font-size:18px;">🗑️ الشقق المحذوفة</h3>
+        <button id="close-deleted" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;">✕</button>
+      </div>
+      <div id="deleted-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <p id="deleted-empty" style="color:#94a3b8;text-align:center;display:none;">لا توجد شقق محذوفة</p>
+    </div>
+    <script>
+      // Deleted apartments panel
+      (function() {
+        const btn = document.getElementById('deleted-btn');
+        const panel = document.getElementById('deleted-panel');
+        const overlay = document.getElementById('deleted-overlay');
+        const closeBtn = document.getElementById('close-deleted');
+        const listEl = document.getElementById('deleted-list');
+        const emptyEl = document.getElementById('deleted-empty');
+        const countEl = document.getElementById('deleted-count');
+
+        function formatDate(d) {
+          if (!d) return '';
+          try { return new Date(d.replace(' ','T')+'Z').toLocaleDateString('ar-EG', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch(e) { return d; }
+        }
+
+        async function loadDeleted() {
+          try {
+            const res = await fetch('/api/apartments/deleted');
+            const apts = await res.json();
+            countEl.textContent = apts.length;
+            listEl.innerHTML = '';
+            if (apts.length === 0) { emptyEl.style.display = 'block'; return; }
+            emptyEl.style.display = 'none';
+            apts.forEach(apt => {
+              const card = document.createElement('div');
+              card.style.cssText = 'background:#0f172a;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;gap:12px;align-items:flex-start;';
+              const imgHtml = apt.imageUrl ? `<img src="${apt.imageUrl}" style="width:80px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : '';
+              const reason = apt.deletedBy === 'user' ? '👤 حذفته أنت' : '🏢 حذفته المنصة';
+              const reasonColor = apt.deletedBy === 'user' ? '#f59e0b' : '#ef4444';
+              card.innerHTML = `
+                ${imgHtml}
+                <div style="flex:1;min-width:0;">
+                  <div style="color:#f8fafc;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${apt.title}</div>
+                  <div style="color:#94a3b8;font-size:12px;margin-top:2px;">💰 ${apt.price || 0}€ | 📍 ${apt.address || apt.area} | 📌 ${apt.source}</div>
+                  <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+                    <span style="color:${reasonColor};font-size:12px;font-weight:600;">${reason}</span>
+                    <span style="color:#64748b;font-size:11px;">${formatDate(apt.deletedAt)}</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+                  <button onclick="restoreApt(${apt.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #22c55e;background:transparent;color:#22c55e;cursor:pointer;font-size:12px;font-family:'Tajawal';">↩️ استرجاع</button>
+                  <button onclick="permDeleteApt(${apt.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-size:12px;font-family:'Tajawal';">❌ حذف نهائي</button>
+                  ${apt.url ? `<a href="${apt.url}" target="_blank" style="padding:4px 10px;border-radius:6px;border:1px solid #3b82f6;color:#3b82f6;text-decoration:none;font-size:12px;text-align:center;font-family:'Tajawal';">🔗 عرض</a>` : ''}
+                </div>
+              `;
+              listEl.appendChild(card);
+            });
+          } catch(e) { console.error(e); }
+        }
+
+        window.restoreApt = async function(id) {
+          await fetch(`/api/apartments/${id}/restore`, { method: 'POST' });
+          loadDeleted();
+        };
+        window.permDeleteApt = async function(id) {
+          if (!confirm('حذف نهائي - لا يمكن التراجع؟')) return;
+          await fetch(`/api/apartments/${id}/permanent`, { method: 'DELETE' });
+          loadDeleted();
+        };
+
+        btn.addEventListener('click', () => {
+          panel.style.display = 'block';
+          overlay.style.display = 'block';
+          loadDeleted();
+        });
+        closeBtn.addEventListener('click', () => { panel.style.display = 'none'; overlay.style.display = 'none'; });
+        overlay.addEventListener('click', () => { panel.style.display = 'none'; overlay.style.display = 'none'; });
+
+        // Load count on page load
+        setTimeout(async () => {
+          try {
+            const res = await fetch('/api/apartments/deleted');
+            const apts = await res.json();
+            countEl.textContent = apts.length;
+          } catch(e) {}
+        }, 2000);
+      })();
+    </script>
+    <script>
+      // Inject images into apartment cards
+      (function() {
+        let aptData = [];
+        let injectedCards = new WeakSet();
+        
+        async function fetchAptData() {
+          try {
+            const res = await fetch('/api/apartments');
+            aptData = await res.json();
+          } catch(e) {}
+        }
+        
+        function injectImages() {
+          if (!aptData.length) return;
+          const titleEls = document.querySelectorAll('h3');
+          titleEls.forEach(el => {
+            const text = (el.textContent || '').trim();
+            if (!text || text.length < 5) return;
+            const card = el.closest('[class*="rounded"]');
+            if (!card || injectedCards.has(card)) return;
+            
+            const apt = aptData.find(a => a.imageUrl && a.title === text);
+            if (!apt) return;
+            injectedCards.add(card);
+            
+            const img = document.createElement('img');
+            img.src = apt.imageUrl;
+            img.style.cssText = 'width:100%;height:150px;object-fit:cover;border-radius:8px 8px 0 0;margin:-12px -12px 8px -12px;width:calc(100% + 24px);';
+            img.onerror = function() { this.remove(); };
+            card.insertBefore(img, card.firstChild);
+          });
+        }
+        
+        // Initial load and periodic refresh
+        fetchAptData().then(injectImages);
+        setInterval(() => { fetchAptData().then(injectImages); }, 30000);
+        // MutationObserver for React re-renders
+        const observer = new MutationObserver(() => { setTimeout(injectImages, 100); });
+        setTimeout(() => {
+          const root = document.getElementById('root');
+          if (root) observer.observe(root, { childList: true, subtree: true });
+        }, 2000);
       })();
     </script>
   <script data-pplx-inline-edit>

@@ -74,7 +74,7 @@ app.patch("/api/apartments/:id/contacted", (req, res) => {
   }
 });
 
-// Delete apartment
+// Delete apartment (soft delete - marked as user deleted)
 app.delete("/api/apartments/:id", (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -84,6 +84,44 @@ app.delete("/api/apartments/:id", (req, res) => {
   } catch (err) {
     console.error("Error deleting apartment:", err);
     res.status(500).json({ error: "Failed to delete apartment" });
+  }
+});
+
+// Get deleted apartments
+app.get("/api/apartments/deleted", (_req, res) => {
+  try {
+    const deleted = db.getDeletedApartments();
+    res.json(deleted);
+  } catch (err) {
+    console.error("Error fetching deleted apartments:", err);
+    res.status(500).json({ error: "Failed to fetch deleted apartments" });
+  }
+});
+
+// Restore deleted apartment
+app.post("/api/apartments/:id/restore", (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const apt = db.restoreApartment(id);
+    if (!apt) return res.status(404).json({ error: "Apartment not found" });
+    res.json(apt);
+  } catch (err) {
+    console.error("Error restoring apartment:", err);
+    res.status(500).json({ error: "Failed to restore apartment" });
+  }
+});
+
+// Permanently delete apartment
+app.delete("/api/apartments/:id/permanent", (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    db.permanentlyDeleteApartment(id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error permanently deleting:", err);
+    res.status(500).json({ error: "Failed to permanently delete" });
   }
 });
 
@@ -183,6 +221,16 @@ async function runFetch() {
 
   const totalFound = apartments.length;
   db.addFetchHistory(totalFound, newCount, stats);
+
+  // Track platform-deleted: increment missedCount for listings not found per source
+  const sourceGroups = {};
+  for (const apt of apartments) {
+    if (!sourceGroups[apt.source]) sourceGroups[apt.source] = [];
+    sourceGroups[apt.source].push(apt.externalId);
+  }
+  for (const [source, ids] of Object.entries(sourceGroups)) {
+    db.incrementMissedCount(source, ids);
+  }
 
   // Send Telegram notifications for new apartments (filtered by preferred areas)
   // Skip mass notifications on first fetch after restart (DB was empty, all appear "new")
