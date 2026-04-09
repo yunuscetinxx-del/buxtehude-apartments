@@ -402,6 +402,23 @@
       }
       .s-card-fav:hover { color: #ef4444; background: #fff; }
       .s-card-fav.fav-active { color: #ef4444; background: #fff; transform: scale(1.1); }
+
+      /* Injected heart button on React apartment cards */
+      .react-card-fav {
+        position: absolute; top: 10px; right: 10px;
+        width: 32px; height: 32px;
+        background: rgba(255,255,255,0.88);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; color: #9ca3af;
+        cursor: pointer;
+        transition: color 0.2s, background 0.2s, transform 0.15s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+        z-index: 2;
+        user-select: none;
+      }
+      .react-card-fav:hover { color: #ef4444; background: #fff; }
+      .react-card-fav.react-card-fav-active { color: #ef4444; background: #fff; transform: scale(1.12); }
       /* Bottom-right overlay: image counter */
       .s-card-counter {
         position: absolute; bottom: 10px; right: 10px;
@@ -2321,23 +2338,130 @@
 
         // Cache apartments from API for detail modal
         function loadAptCache() {
-          fetch('/api/apartments').then(function(r){return r.json();}).then(function(data) { aptCache = data; }).catch(function(){});
+          fetch('/api/apartments').then(function(r){return r.json();}).then(function(data) {
+            aptCache = data;
+            // Re-run image injection after cache refresh (new images may be available)
+            setTimeout(addCardClick, 100);
+          }).catch(function(){});
         }
         loadAptCache();
         setInterval(loadAptCache, 30000);
 
+        // Inject apartment image into a React card
+        function injectCardImage(card, apt) {
+          if (card.dataset.imgInjected) return;
+          card.dataset.imgInjected = '1';
+
+          var images = [];
+          try { images = JSON.parse(apt.imageUrls || '[]'); } catch(e) {}
+          if (!images.length && apt.imageUrl) images = [apt.imageUrl];
+          // Remove placeholder/icon-only images
+          images = images.filter(function(u) { return u && (u.startsWith('http') || u.startsWith('/images/')); });
+
+          // Adjust card: remove top/left/right padding, clip overflow for rounded corners
+          card.style.paddingTop = '0';
+          card.style.paddingLeft = '0';
+          card.style.paddingRight = '0';
+          card.style.overflow = 'hidden';
+
+          // Wrap existing children in a padded body div (preserves React button layout)
+          var bodyWrap = document.createElement('div');
+          bodyWrap.style.cssText = 'padding: 0 16px 4px; flex:1; min-width:0;';
+          while (card.firstChild) bodyWrap.appendChild(card.firstChild);
+
+          var srcColors = {
+            'Kleinanzeigen':'#2dd4bf','Immowelt':'#a78bfa','markt.de':'#fb7185',
+            'Wohnungsb\u00f6rse':'#818cf8','Immonet':'#f472b6'
+          };
+          var srcColor = srcColors[apt.source] || '#6366f1';
+          var srcBg = (apt.source === 'Kleinanzeigen') ? 'rgba(13,148,136,0.18)' :
+                      (apt.source === 'Immowelt') ? 'rgba(124,58,237,0.18)' :
+                      (apt.source === 'markt.de') ? 'rgba(225,25,88,0.18)' :
+                      (apt.source === 'Wohnungsb\u00f6rse') ? 'rgba(79,70,229,0.18)' : 'rgba(99,102,241,0.18)';
+
+          if (images.length > 0) {
+            var counterBadge = images.length > 1
+              ? '<span style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;pointer-events:none;">' +
+                '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:2px"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>' +
+                '1 / ' + images.length + '</span>'
+              : '';
+            var favCls = 'react-card-fav' + (apt.isFavorite ? ' react-card-fav-active' : '');
+            var imgBlock = document.createElement('div');
+            imgBlock.style.cssText = 'position:relative;width:100%;height:185px;overflow:hidden;flex-shrink:0;cursor:pointer;';
+            imgBlock.innerHTML =
+              '<img src="' + escH(images[0]) + '" data-images="' + escH(JSON.stringify(images)) + '" ' +
+                'style="width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s ease;" ' +
+                'onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">' +
+              '<div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:var(--bg-secondary);font-size:40px;">🏠</div>' +
+              '<span style="position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + srcBg + ';color:' + srcColor + ';border:1px solid ' + srcColor + '33;pointer-events:none;">' + escH(apt.source) + '</span>' +
+              '<span class="' + favCls + '" data-apt-id="' + apt.id + '" title="Merken" onclick="event.stopPropagation();window.toggleReactFav(this,event)">&#9829;</span>' +
+              counterBadge;
+            // Hover zoom on image
+            imgBlock.addEventListener('mouseenter', function() {
+              var img = imgBlock.querySelector('img');
+              if (img) img.style.transform = 'scale(1.04)';
+            });
+            imgBlock.addEventListener('mouseleave', function() {
+              var img = imgBlock.querySelector('img');
+              if (img) img.style.transform = '';
+            });
+            card.appendChild(imgBlock);
+          } else {
+            // No image placeholder with source badge + fav
+            var noImgBlock = document.createElement('div');
+            var favCls2 = 'react-card-fav' + (apt.isFavorite ? ' react-card-fav-active' : '');
+            noImgBlock.style.cssText = 'position:relative;width:100%;height:100px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);';
+            noImgBlock.innerHTML =
+              '<span style="font-size:36px;opacity:0.35;">🏠</span>' +
+              '<span style="position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + srcBg + ';color:' + srcColor + ';border:1px solid ' + srcColor + '33;pointer-events:none;">' + escH(apt.source) + '</span>' +
+              '<span class="' + favCls2 + '" data-apt-id="' + apt.id + '" title="Merken" onclick="event.stopPropagation();window.toggleReactFav(this,event)">&#9829;</span>';
+            card.appendChild(noImgBlock);
+          }
+
+          card.appendChild(bodyWrap);
+        }
+
+        // Toggle favourite from the injected heart button on React cards
+        window.toggleReactFav = function(el, evt) {
+          if (evt) evt.stopPropagation();
+          var id = parseInt(el.dataset.aptId);
+          if (!id) return;
+          // Optimistic UI
+          el.classList.toggle('react-card-fav-active');
+          fetch('/api/apartments/' + id + '/favorite', {
+            method: 'PATCH',
+            headers: (function() {
+              var h = { 'Content-Type': 'application/json' };
+              var email = localStorage.getItem('userEmail');
+              if (email) h['X-User-Email'] = email;
+              return h;
+            })()
+          }).then(function(r) { return r.json(); }).then(function(updated) {
+            // Sync aptCache
+            var cached = aptCache.find(function(a) { return a.id === id; });
+            if (cached) cached.isFavorite = updated.isFavorite;
+            el.classList.toggle('react-card-fav-active', !!updated.isFavorite);
+          }).catch(function() {
+            el.classList.toggle('react-card-fav-active'); // revert
+          });
+        };
+
         // Attach click to React cards
         function addCardClick() {
           document.querySelectorAll('[data-testid^="card-apartment-"]').forEach(function(card) {
+            // Inject image first (idempotent)
+            var testId = card.getAttribute('data-testid');
+            var id = testId ? parseInt(testId.replace('card-apartment-', '')) : null;
+            if (id) {
+              var apt = aptCache.find(function(a) { return a.id === id; });
+              if (apt) injectCardImage(card, apt);
+            }
             if (card.dataset.cardClickBound) return;
             card.dataset.cardClickBound = '1';
             card.addEventListener('click', function(e) {
               if (e.target.closest('button, a, input, select, textarea')) return;
-              var testId = card.getAttribute('data-testid');
-              var id = testId ? parseInt(testId.replace('card-apartment-', '')) : null;
-              if (!id) return;
-              var apt = aptCache.find(function(a) { return a.id === id; });
-              if (apt) openDetail(apt);
+              var apt2 = aptCache.find(function(a) { return a.id === id; });
+              if (apt2) openDetail(apt2);
             });
           });
         }
