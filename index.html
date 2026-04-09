@@ -61,73 +61,92 @@
         top: 0;
         z-index: 9999;
         background: var(--bg-surface);
-        border-bottom: 2px solid var(--accent);
-        padding: 12px 20px;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0 24px;
+        height: 62px;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 18px;
         font-family: 'Inter', 'Tajawal', sans-serif;
-        box-shadow: 0 4px 20px var(--shadow);
+        box-shadow: 0 1px 6px var(--shadow);
       }
       html[dir="rtl"] #main-nav { font-family: 'Tajawal', 'Inter', sans-serif; }
+
+      /* Logo / Brand pill */
       .nav-brand {
         display: flex;
         align-items: center;
-        gap: 10px;
-        color: var(--text-primary);
-        font-weight: 700;
-        font-size: 18px;
-        white-space: nowrap;
+        flex-shrink: 0;
+        text-decoration: none;
+        cursor: pointer;
       }
-      .nav-brand-icon { font-size: 24px; }
+      .nav-brand-logo {
+        background: var(--accent);
+        color: #fff;
+        padding: 7px 14px;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        white-space: nowrap;
+        line-height: 1;
+        transition: opacity 0.18s;
+      }
+      .nav-brand-logo:hover { opacity: 0.88; }
+      .nav-brand-logo .nav-brand-icon { font-size: 17px; }
 
       /* City Search */
       .city-search-wrapper {
         position: relative;
         flex: 1;
-        max-width: 480px;
+        max-width: 500px;
       }
       .city-search-wrapper input {
         width: 100%;
-        padding: 10px 48px 10px 16px;
-        border-radius: 12px;
-        border: 2px solid var(--border-color);
-        background: var(--bg-secondary);
+        padding: 9px 46px 9px 18px;
+        border-radius: 24px;
+        border: 1.5px solid var(--border-color);
+        background: var(--bg-primary);
         color: var(--text-primary);
         font-size: 14px;
         font-family: inherit;
         outline: none;
-        transition: border-color 0.2s;
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
-      html[dir="rtl"] .city-search-wrapper input { padding: 10px 16px 10px 48px; }
-      .city-search-wrapper input:focus { border-color: var(--accent); }
+      html[dir="rtl"] .city-search-wrapper input { padding: 9px 18px 9px 46px; }
+      .city-search-wrapper input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+      }
       .city-search-wrapper input::placeholder { color: var(--text-muted); }
       #city-search-btn {
         position: absolute;
-        right: 4px; top: 50%;
+        right: 5px; top: 50%;
         transform: translateY(-50%);
         background: var(--accent);
         color: #fff;
         border: none;
-        width: 36px; height: 36px;
-        border-radius: 10px;
+        width: 32px; height: 32px;
+        border-radius: 50%;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 14px;
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s;
       }
-      html[dir="rtl"] #city-search-btn { right: auto; left: 4px; }
+      html[dir="rtl"] #city-search-btn { right: auto; left: 5px; }
       #city-search-btn:hover { background: var(--accent-hover); }
       #city-search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
       .city-dropdown {
         display: none;
         position: absolute;
-        top: 100%; left: 0; right: 0;
-        margin-top: 4px;
+        top: calc(100% + 6px); left: 0; right: 0;
         background: var(--bg-surface);
         border: 1px solid var(--border-color);
-        border-radius: 12px;
+        border-radius: 14px;
         max-height: 300px;
         overflow-y: auto;
         z-index: 10000;
@@ -135,7 +154,7 @@
       }
       .city-dropdown.active { display: block; }
       .city-dropdown-item {
-        padding: 10px 16px;
+        padding: 10px 18px;
         cursor: pointer;
         color: var(--text-primary);
         font-size: 14px;
@@ -153,45 +172,86 @@
         margin-inline-start: 8px;
       }
 
+      /* Vertical divider before actions */
+      .nav-divider {
+        width: 1px;
+        height: 26px;
+        background: var(--border-color);
+        flex-shrink: 0;
+      }
+
       /* Nav action buttons */
       .nav-actions {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
+        flex-shrink: 0;
       }
       .nav-btn {
-        padding: 8px 12px;
-        border-radius: 10px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-surface);
+        padding: 7px 13px;
+        border-radius: 8px;
+        border: 1.5px solid transparent;
+        background: transparent;
         color: var(--text-secondary);
         cursor: pointer;
         font-family: inherit;
         font-size: 13px;
         font-weight: 500;
-        transition: all 0.2s;
+        transition: all 0.18s;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
         white-space: nowrap;
       }
       .nav-btn:hover {
         background: var(--bg-surface-hover);
-        border-color: var(--accent);
         color: var(--text-primary);
       }
-      .nav-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-      .nav-btn-green { background: #065f46; border-color: #065f46; color: #fff; }
-      .nav-btn-green:hover { background: #047857; }
-      .nav-btn-blue { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
-      .nav-btn-blue:hover { background: #1e40af; }
-      .nav-btn-red { background: #7f1d1d; border-color: #991b1b; color: #fca5a5; }
-      .nav-btn-red:hover { background: #991b1b; }
+      .nav-btn.active { background: var(--accent); color: #fff; }
+
+      /* Semantic colour variants */
+      .nav-btn-green {
+        background: #ecfdf5; border-color: #a7f3d0; color: #065f46;
+      }
+      html.dark .nav-btn-green {
+        background: #064e3b; border-color: #065f46; color: #6ee7b7;
+      }
+      .nav-btn-green:hover { background: #d1fae5; border-color: #6ee7b7; }
+      html.dark .nav-btn-green:hover { background: #065f46; }
+
+      .nav-btn-blue {
+        background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8;
+      }
+      html.dark .nav-btn-blue {
+        background: #1e3a5f; border-color: #3b82f6; color: #93c5fd;
+      }
+      .nav-btn-blue:hover { background: #dbeafe; border-color: #93c5fd; }
+      html.dark .nav-btn-blue:hover { background: #1e40af; }
+
+      .nav-btn-red {
+        background: #fef2f2; border-color: #fecaca; color: #b91c1c;
+      }
+      html.dark .nav-btn-red {
+        background: #7f1d1d; border-color: #991b1b; color: #fca5a5;
+      }
+      .nav-btn-red:hover { background: #fee2e2; border-color: #fca5a5; }
+      html.dark .nav-btn-red:hover { background: #991b1b; }
+
       .area-count {
         font-size: 11px;
-        background: rgba(255,255,255,0.15);
+        background: currentColor;
+        color: inherit;
+        opacity: 0.18;
         padding: 1px 6px;
         border-radius: 10px;
+      }
+      .nav-btn-red .area-count,
+      .nav-btn-blue .area-count,
+      .nav-btn-green .area-count {
+        background: rgba(0,0,0,0.12);
+        color: inherit;
+        opacity: 1;
+        font-weight: 700;
       }
 
       /* Monitor Area Filter Bar */
@@ -778,7 +838,7 @@
       #update-banner {
         display: none;
         position: sticky;
-        top: 54px; /* below nav */
+        top: 62px; /* below nav */
         z-index: 9998;
         background: linear-gradient(90deg, var(--accent) 0%, #7c3aed 100%);
         color: #fff;
@@ -988,14 +1048,16 @@
 
       /* ==================== Responsive ==================== */
       @media (max-width: 768px) {
-        /* Nav: stack search below brand+actions */
+        /* Nav: search moves to second row */
         #main-nav {
           flex-wrap: wrap;
+          height: auto;
           gap: 8px;
           padding: 10px 12px;
         }
-        .nav-brand { font-size: 15px; }
-        .nav-brand-icon { font-size: 20px; }
+        .nav-brand-logo { font-size: 13px; padding: 6px 10px; }
+        .nav-brand-logo .nav-brand-icon { font-size: 15px; }
+        .nav-divider { display: none; }
         .city-search-wrapper {
           order: 3;
           flex-basis: 100%;
@@ -1008,7 +1070,7 @@
           gap: 4px;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none;
-          max-width: calc(100vw - 130px);
+          max-width: calc(100vw - 145px);
         }
         .nav-actions::-webkit-scrollbar { display: none; }
         .nav-btn {
@@ -1188,14 +1250,17 @@
     <!-- ==================== Main Navigation ==================== -->
     <nav id="main-nav">
       <div class="nav-brand">
-        <span class="nav-brand-icon">🏠</span>
-        <span id="app-title" data-i18n="appName">Wohnungsfinder</span>
+        <div class="nav-brand-logo">
+          <span class="nav-brand-icon">🏠</span>
+          <span id="app-title" data-i18n="appName">Wohnungsfinder</span>
+        </div>
       </div>
       <div class="city-search-wrapper">
         <input type="text" id="city-input" data-i18n-placeholder="searchPlaceholder" placeholder="Stadt suchen..." autocomplete="off" />
         <button id="city-search-btn" title="Search">🔍</button>
         <div id="city-dropdown" class="city-dropdown"></div>
       </div>
+      <div class="nav-divider"></div>
       <div class="nav-actions">
         <button id="lang-toggle" class="nav-btn">العربية</button>
         <button id="theme-toggle" class="nav-btn">☀️</button>
