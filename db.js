@@ -88,6 +88,15 @@ async function getDb() {
   
   // Price type column (Warmmiete / Kaltmiete)
   try { db.run("ALTER TABLE apartments ADD COLUMN priceType TEXT DEFAULT ''"); } catch (e) {}
+
+  // One-time fix: restore all platform-deleted apartments and reset missedCount
+  // (old threshold of 6 was too aggressive, causing valid listings to disappear)
+  const platformDeleted = db.exec("SELECT COUNT(*) FROM apartments WHERE isDeleted = 1 AND deletedBy = 'platform'");
+  const count = platformDeleted[0]?.values[0][0] || 0;
+  if (count > 0) {
+    db.run("UPDATE apartments SET isDeleted = 0, deletedBy = '', deletedAt = '', missedCount = 0, isNew = 1 WHERE isDeleted = 1 AND deletedBy = 'platform'");
+    console.log(`🔄 Restored ${count} platform-deleted apartments (old threshold was too low)`);
+  }
   
   // Fix source name: immowelt -> Immowelt
   try { db.run("UPDATE apartments SET source = 'Immowelt' WHERE source = 'immowelt'"); } catch (e) {}
@@ -100,7 +109,16 @@ async function getDb() {
       updatedAt TEXT DEFAULT (datetime('now'))
     );
   `);
-  
+
+  // Search cache table — stores city search results for reuse across users
+  db.run(`
+    CREATE TABLE IF NOT EXISTS search_cache (
+      city TEXT PRIMARY KEY,
+      apartments TEXT DEFAULT '[]',
+      cachedAt TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
   saveDb();
   return db;
 }
@@ -277,9 +295,9 @@ function incrementMissedCount(source, foundExternalIds) {
   } else {
     db.run("UPDATE apartments SET missedCount = missedCount + 1 WHERE source = ? AND isDeleted = 0", [source]);
   }
-  // Mark as platform-deleted if missed 6+ times (1 hour of 10-min checks)
+  // Mark as platform-deleted if missed 48+ times (~8 hours of 10-min checks)
   db.run(
-    "UPDATE apartments SET isDeleted = 1, deletedBy = 'platform', deletedAt = datetime('now') WHERE missedCount >= 6 AND isDeleted = 0 AND deletedBy = ''"
+    "UPDATE apartments SET isDeleted = 1, deletedBy = 'platform', deletedAt = datetime('now') WHERE missedCount >= 48 AND isDeleted = 0 AND deletedBy = ''"
   );
   saveDb();
 }
@@ -364,6 +382,55 @@ function restoreUserBackup(email) {
   return data;
 }
 
+// Returns cached apartments for a city if fresh (< 2 hours), otherwise null
+function getSearchCache(city) {
+  if (!db) return null;
+  try {
+    const stmt = db.prepare('SELECT apartments, cachedAt FROM search_cache WHERE LOWER(city) = LOWER(?)');
+    stmt.bind([city]);
+    if (!stmt.step()) { stmt.free(); return null; }
+    const row = stmt.getAsObject();
+    stmt.free();
+    // Reject stale cache (older than 2 hours)
+    const cachedAt = new Date(String(row.cachedAt).replace(' ', 'T') + 'Z');
+    if (isNaN(cachedAt.getTime()) || (Date.now() - cachedAt.getTime()) > 2 * 60 * 60 * 1000) return null;
+    return JSON.parse(row.apartments);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Returns all cities that have ever been searched (for auto-refresh)
+function getCachedCities() {
+  if (!db) return [];
+  try {
+    const stmt = db.prepare('SELECT city FROM search_cache ORDER BY cachedAt DESC');
+    const cities = [];
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      cities.push(row.city);
+    }
+    stmt.free();
+    return cities;
+  } catch (e) {
+    return [];
+  }
+}
+
+// Saves city search results to cache (saves even empty results so city is tracked)
+function saveSearchCache(city, apartments) {
+  if (!db) return;
+  try {
+    db.run(
+      'INSERT OR REPLACE INTO search_cache (city, apartments, cachedAt) VALUES (LOWER(?), ?, datetime(\'now\'))',
+      [city, JSON.stringify(apartments || [])]
+    );
+    saveDb();
+  } catch (e) {
+    console.error('saveSearchCache error:', e.message);
+  }
+}
+
 module.exports = {
   getDb,
   getAllApartments,
@@ -386,4 +453,7 @@ module.exports = {
   saveUserBackup,
   restoreUserBackup,
   categorize,
+  getSearchCache,
+  saveSearchCache,
+  getCachedCities,
 };

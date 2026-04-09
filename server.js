@@ -2,11 +2,11 @@ const express = require("express");
 const path = require("path");
 const cron = require("node-cron");
 const db = require("./db");
-const { scrapeAll, fetchKleinanzeigenDate } = require("./scraper");
+const { scrapeAll, scrapeCity, fetchKleinanzeigenDate } = require("./scraper");
 const telegram = require("./telegram");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 
 // Track if this is the first fetch after server start
 let isFirstFetch = true;
@@ -217,6 +217,59 @@ app.post("/api/settings/telegram-areas", (req, res) => {
   res.json({ areas });
 });
 
+// Search API - on-demand scraping for any German city (with 2-hour result cache)
+let isSearching = false;
+app.post("/api/search", async (req, res) => {
+  if (isSearching) {
+    return res.status(429).json({ error: "Search already in progress" });
+  }
+  const { city } = req.body;
+  if (!city || typeof city !== 'string' || city.trim().length < 2 || city.trim().length > 100) {
+    return res.status(400).json({ error: "Invalid city name" });
+  }
+  const cityName = city.trim();
+
+  // Return cached results if fresh (< 2 hours)
+  const cached = db.getSearchCache(cityName);
+  if (cached) {
+    console.log(`📦 Cached results for ${cityName}: ${cached.length} listings`);
+    return res.json({ apartments: cached, stats: [], fromCache: true });
+  }
+
+  try {
+    isSearching = true;
+    const result = await scrapeCity(cityName);
+    // Always save to cache so the city is tracked for hourly auto-refresh
+    db.saveSearchCache(cityName, result.apartments);
+    res.json(result);
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ error: "Search failed" });
+  } finally {
+    isSearching = false;
+  }
+});
+
+// Quick cache-info endpoint: returns current cached result counts for a list of cities
+// (no scraping — used for page-load notifications)
+app.post('/api/search-cache-info', (req, res) => {
+  try {
+    const cities = req.body.cities;
+    if (!Array.isArray(cities) || cities.length > 20) {
+      return res.status(400).json({ error: 'Invalid request' });
+    }
+    const result = {};
+    for (const city of cities) {
+      if (typeof city !== 'string' || city.length > 100) continue;
+      const cached = db.getSearchCache(city.trim());
+      result[city.trim()] = cached ? cached.length : null;
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // SPA fallback - serve index.html for non-API routes
 app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
@@ -313,6 +366,28 @@ cron.schedule("*/10 * * * *", async () => {
   } catch (err) {
     console.error("Cron fetch error:", err);
   }
+});
+
+// Hourly auto-refresh: re-scrape all previously searched cities in background
+cron.schedule("5 * * * *", async () => {
+  const cities = db.getCachedCities();
+  if (cities.length === 0) return;
+  console.log(`\n🔄 Auto-refreshing ${cities.length} cached cities: ${cities.join(', ')}`);
+  for (const city of cities) {
+    try {
+      // Skip if a manual search is in progress
+      if (isSearching) {
+        console.log(`  ⏸ Skipping ${city} (manual search in progress)`);
+        continue;
+      }
+      const result = await scrapeCity(city);
+      db.saveSearchCache(city, result.apartments);
+      console.log(`  ✅ Refreshed ${city}: ${result.apartments.length} listings`);
+    } catch (err) {
+      console.error(`  ❌ Failed to refresh ${city}: ${err.message}`);
+    }
+  }
+  console.log(`🔄 Auto-refresh complete\n`);
 });
 
 // Hourly report to Telegram

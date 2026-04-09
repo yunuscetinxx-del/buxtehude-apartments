@@ -1,157 +1,516 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark">
+<html lang="de" dir="ltr" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>شقق بوكستيهودة 2026</title>
-    <meta name="description" content="تطبيق لتتبع الشقق المتاحة للإيجار في بوكستيهودة، ألمانيا" />
+    <title>Wohnungsfinder Deutschland</title>
+    <meta name="description" content="Wohnungssuche in ganz Deutschland" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect x='4' y='18' width='32' height='18' rx='2' fill='%234b8bf4' opacity='0.3'/%3E%3Cpath d='M20 4 L36 18 L4 18 Z' fill='%234b8bf4'/%3E%3Crect x='15' y='26' width='10' height='10' rx='1' fill='%234b8bf4'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
     <script type="module" crossorigin src="./assets/index-DXDSDPkg.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-iiVQX1qG.css">
     <style>
-      @keyframes pulse-red {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-        50% { box-shadow: 0 0 15px 5px rgba(239, 68, 68, 0.3); }
+      /* ==================== Theme Variables ==================== */
+      html.dark {
+        --bg-primary: #0a0f1a;
+        --bg-secondary: #111827;
+        --bg-surface: #1e293b;
+        --bg-surface-hover: #334155;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --border-color: #334155;
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --success: #34d399;
+        --danger: #ef4444;
+        --shadow: rgba(0,0,0,0.3);
+        --overlay-bg: rgba(0,0,0,0.6);
       }
-      [class*="ring-red-500"] { animation: pulse-red 2s infinite !important; }
-      
-      /* Area filter bar */
-      #area-filter-bar {
+      html.light {
+        --bg-primary: #f0f4f8;
+        --bg-secondary: #ffffff;
+        --bg-surface: #ffffff;
+        --bg-surface-hover: #f1f5f9;
+        --text-primary: #1e293b;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+        --border-color: #e2e8f0;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --success: #059669;
+        --danger: #dc2626;
+        --shadow: rgba(0,0,0,0.06);
+        --overlay-bg: rgba(0,0,0,0.4);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Inter', 'Tajawal', sans-serif;
+        transition: background 0.3s;
+      }
+      html[dir="rtl"] body { font-family: 'Tajawal', 'Inter', sans-serif; }
+
+      /* ==================== Main Navigation ==================== */
+      #main-nav {
         position: sticky;
         top: 0;
         z-index: 9999;
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        background: var(--bg-surface);
+        border-bottom: 2px solid var(--accent);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-family: 'Inter', 'Tajawal', sans-serif;
+        box-shadow: 0 4px 20px var(--shadow);
+      }
+      html[dir="rtl"] #main-nav { font-family: 'Tajawal', 'Inter', sans-serif; }
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-primary);
+        font-weight: 700;
+        font-size: 18px;
+        white-space: nowrap;
+      }
+      .nav-brand-icon { font-size: 24px; }
+
+      /* City Search */
+      .city-search-wrapper {
+        position: relative;
+        flex: 1;
+        max-width: 480px;
+      }
+      .city-search-wrapper input {
+        width: 100%;
+        padding: 10px 48px 10px 16px;
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      html[dir="rtl"] .city-search-wrapper input { padding: 10px 16px 10px 48px; }
+      .city-search-wrapper input:focus { border-color: var(--accent); }
+      .city-search-wrapper input::placeholder { color: var(--text-muted); }
+      #city-search-btn {
+        position: absolute;
+        right: 4px; top: 50%;
+        transform: translateY(-50%);
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s;
+      }
+      html[dir="rtl"] #city-search-btn { right: auto; left: 4px; }
+      #city-search-btn:hover { background: var(--accent-hover); }
+      #city-search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .city-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%; left: 0; right: 0;
+        margin-top: 4px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 10000;
+        box-shadow: 0 8px 30px var(--shadow);
+      }
+      .city-dropdown.active { display: block; }
+      .city-dropdown-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: background 0.15s;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .city-dropdown-item:last-child { border-bottom: none; }
+      .city-dropdown-item:hover, .city-dropdown-item.selected { background: var(--bg-surface-hover); }
+      .city-dropdown-item .monitored-badge {
+        font-size: 10px;
+        background: var(--accent);
+        color: #fff;
+        padding: 1px 6px;
+        border-radius: 6px;
+        margin-inline-start: 8px;
+      }
+
+      /* Nav action buttons */
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nav-btn {
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .nav-btn:hover {
+        background: var(--bg-surface-hover);
+        border-color: var(--accent);
+        color: var(--text-primary);
+      }
+      .nav-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .nav-btn-green { background: #065f46; border-color: #065f46; color: #fff; }
+      .nav-btn-green:hover { background: #047857; }
+      .nav-btn-blue { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+      .nav-btn-blue:hover { background: #1e40af; }
+      .nav-btn-red { background: #7f1d1d; border-color: #991b1b; color: #fca5a5; }
+      .nav-btn-red:hover { background: #991b1b; }
+      .area-count {
+        font-size: 11px;
+        background: rgba(255,255,255,0.15);
+        padding: 1px 6px;
+        border-radius: 10px;
+      }
+
+      /* Monitor Area Filter Bar */
+      #monitor-bar {
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
         padding: 10px 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        border-bottom: 2px solid #3b82f6;
-        font-family: 'Tajawal', sans-serif;
-        direction: rtl;
+        font-family: 'Inter', 'Tajawal', sans-serif;
       }
-      #area-filter-bar label {
-        color: #94a3b8;
-        font-size: 14px;
-        font-weight: 500;
-      }
-      #area-filter-bar .area-btn {
+      html[dir="rtl"] #monitor-bar { font-family: 'Tajawal', 'Inter', sans-serif; }
+      .area-btn {
         padding: 6px 16px;
         border-radius: 20px;
-        border: 1px solid #334155;
-        background: #1e293b;
-        color: #cbd5e1;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
         cursor: pointer;
-        font-family: 'Tajawal', sans-serif;
+        font-family: inherit;
         font-size: 13px;
         font-weight: 500;
         transition: all 0.2s;
       }
-      #area-filter-bar .area-btn:hover {
-        background: #334155;
-        border-color: #3b82f6;
+      .area-btn:hover { background: var(--bg-surface-hover); border-color: var(--accent); }
+      .area-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+
+      /* ==================== Search Results ==================== */
+      #search-results {
+        display: none;
+        padding: 0 16px 32px;
+        max-width: 1400px;
+        margin: 0 auto;
       }
-      #area-filter-bar .area-btn.active {
-        background: #3b82f6;
-        border-color: #3b82f6;
-        color: #fff;
+      #search-results.active { display: block; }
+      .search-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 0 8px;
+      }
+      .search-back-btn {
+        padding: 8px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      .search-back-btn:hover { border-color: var(--accent); background: var(--bg-surface-hover); }
+      .search-info h2 {
+        color: var(--text-primary);
+        font-size: 20px;
+        margin: 0;
         font-weight: 700;
       }
-      #area-filter-bar .area-count {
-        font-size: 11px;
-        background: rgba(255,255,255,0.15);
-        padding: 1px 6px;
-        border-radius: 10px;
-        margin-right: 4px;
+      .search-info span { color: var(--text-secondary); font-size: 13px; }
+      .search-source-filter {
+        display: flex;
+        gap: 8px;
+        padding: 8px 0 16px;
+        flex-wrap: wrap;
       }
-      /* Settings panel */
-      #settings-btn {
+      .search-source-btn {
         padding: 6px 14px;
-        border-radius: 20px;
-        border: 1px solid #334155;
-        background: #1e293b;
-        color: #cbd5e1;
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
         cursor: pointer;
-        font-family: 'Tajawal', sans-serif;
-        font-size: 13px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
         transition: all 0.2s;
-        margin-right: 12px;
       }
-      #settings-btn:hover { background: #334155; border-color: #f59e0b; }
-      #settings-panel {
-        display: none;
-        position: fixed;
+      .search-source-btn:hover { border-color: var(--accent); }
+      .search-source-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+      }
+      @media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } }
+      /* ==================== Search Result Cards (ImmoScout style) ==================== */
+      .s-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: box-shadow 0.2s, transform 0.15s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+      }
+      .s-card:hover {
+        box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+        transform: translateY(-2px);
+      }
+      /* Image container */
+      .s-card-media {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: var(--bg-secondary);
+      }
+      .s-card-media img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.3s;
+      }
+      .s-card:hover .s-card-media img { transform: scale(1.03); }
+      /* No-image placeholder */
+      .s-card-no-img {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, var(--bg-surface), var(--bg-secondary));
+        color: var(--text-muted); font-size: 48px;
+      }
+      /* Top-left overlay: source badge */
+      .s-card-source-badge {
+        position: absolute; top: 10px; left: 10px;
+        font-size: 11px; font-weight: 700;
+        padding: 3px 10px; border-radius: 20px;
+        backdrop-filter: blur(2px);
+        pointer-events: none;
+      }
+      /* Top-right overlay: favourite heart */
+      .s-card-fav {
+        position: absolute; top: 10px; right: 10px;
+        width: 32px; height: 32px;
+        background: rgba(255,255,255,0.88);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; color: #9ca3af;
+        cursor: pointer;
+        transition: color 0.2s, background 0.2s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      }
+      .s-card-fav:hover { color: #ef4444; background: #fff; }
+      /* Bottom-right overlay: image counter */
+      .s-card-counter {
+        position: absolute; bottom: 10px; right: 10px;
+        background: rgba(0,0,0,0.62);
+        color: #fff; font-size: 11px; font-weight: 600;
+        padding: 2px 8px; border-radius: 20px;
+        pointer-events: none;
+      }
+      /* Card content */
+      .s-card-body {
+        padding: 14px 16px 16px;
+        display: flex; flex-direction: column; gap: 4px;
+        flex: 1;
+      }
+      /* Price row */
+      .s-card-price-row {
+        display: flex; align-items: center; gap: 8px;
+        flex-wrap: wrap;
+      }
+      .s-card-price {
+        font-size: 20px; font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.2;
+      }
+      .s-card-price-type {
+        font-size: 11px; font-weight: 500;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        padding: 2px 8px; border-radius: 20px;
+      }
+      /* Title */
+      .s-card-title {
+        color: var(--text-primary);
+        font-size: 14px; font-weight: 600;
+        line-height: 1.4;
+        margin: 0;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      /* Details: rooms · size */
+      .s-card-details {
+        font-size: 13px; color: var(--text-secondary);
+        display: flex; align-items: center; gap: 6px;
+        flex-wrap: wrap;
+      }
+      .s-card-details-sep { color: var(--text-muted); }
+      /* Location row */
+      .s-card-location {
+        font-size: 13px; color: #3b82f6;
+        display: flex; align-items: center; gap: 4px;
+        margin-top: 2px;
+      }
+      .dark .s-card-location { color: #60a5fa; }
+      /* Feature tags */
+      .s-card-features {
+        display: flex; flex-wrap: wrap; gap: 4px;
+        margin-top: 4px;
+      }
+      .s-card-feat {
+        font-size: 10px; padding: 2px 8px; border-radius: 8px;
+        background: var(--bg-secondary); color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+      }
+
+      /* ==================== Loading Overlay ==================== */
+      #search-loading {
+        display: none; position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: var(--overlay-bg);
+        z-index: 10050;
+        align-items: center; justify-content: center;
+      }
+      #search-loading.active { display: flex; }
+      .loading-box {
+        background: var(--bg-surface);
+        border-radius: 20px;
+        padding: 40px 50px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      }
+      .loading-spinner {
+        width: 50px; height: 50px;
+        border: 4px solid var(--border-color);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .loading-text { color: var(--text-primary); font-size: 16px; font-weight: 600; }
+      .loading-sub { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+
+      /* ==================== Pulse Animation (disabled) ==================== */
+      [class*="ring-red-500"] {
+        --tw-ring-opacity: 0 !important;
+        --tw-ring-color: transparent !important;
+        box-shadow: none !important;
+        animation: none !important;
+      }
+      [class*="animate-pulse"] { animation: none !important; }
+      [class*="shadow-red"] { --tw-shadow-color: transparent !important; box-shadow: none !important; }
+
+      /* ==================== Modals (shared) ==================== */
+      .modal-overlay {
+        display: none; position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: var(--overlay-bg);
+        z-index: 10000;
+      }
+      .modal-overlay.active { display: block; }
+      .modal-panel {
+        display: none; position: fixed;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         z-index: 10001;
-        background: #1e293b;
-        border: 2px solid #3b82f6;
+        background: var(--bg-surface);
+        border: 2px solid var(--accent);
         border-radius: 16px;
         padding: 24px 28px;
         min-width: 320px;
-        font-family: 'Tajawal', sans-serif;
-        direction: rtl;
+        font-family: 'Inter', 'Tajawal', sans-serif;
         box-shadow: 0 20px 60px rgba(0,0,0,0.5);
       }
-      #settings-panel h3 {
-        color: #f8fafc;
-        margin: 0 0 16px 0;
-        font-size: 18px;
+      html[dir="rtl"] .modal-panel { font-family: 'Tajawal', 'Inter', sans-serif; }
+      .modal-panel.active { display: block; }
+      .modal-panel h3 { color: var(--text-primary); margin: 0 0 16px 0; font-size: 18px; }
+      .modal-sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 12px 0; }
+      .modal-checkbox {
+        display: flex; align-items: center; gap: 10px;
+        color: var(--text-secondary); padding: 8px 0; font-size: 15px; cursor: pointer;
       }
-      #settings-panel label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: #cbd5e1;
-        padding: 8px 0;
-        font-size: 15px;
-        cursor: pointer;
+      .modal-checkbox input[type="checkbox"] {
+        width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;
       }
-      #settings-panel input[type="checkbox"] {
-        width: 18px; height: 18px;
-        accent-color: #3b82f6;
-        cursor: pointer;
+      .modal-save-btn {
+        margin-top: 16px; width: 100%; padding: 10px;
+        border-radius: 10px; border: none;
+        background: var(--accent); color: #fff;
+        font-family: inherit; font-size: 15px; font-weight: 700;
+        cursor: pointer; transition: background 0.2s;
       }
-      #settings-panel .save-btn {
-        margin-top: 16px;
-        width: 100%;
-        padding: 10px;
-        border-radius: 10px;
-        border: none;
-        background: #3b82f6;
-        color: #fff;
-        font-family: 'Tajawal', sans-serif;
-        font-size: 15px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: background 0.2s;
+      .modal-save-btn:hover { background: var(--accent-hover); }
+      .modal-danger-btn {
+        width: 100%; padding: 10px; margin-top: 8px;
+        border-radius: 10px; border: 1px solid var(--danger);
+        background: transparent; color: #fca5a5;
+        font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
       }
-      #settings-panel .save-btn:hover { background: #2563eb; }
-      #settings-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 10000;
+      .modal-status { font-size: 13px; text-align: center; margin: 8px 0 0 0; display: none; }
+      .modal-status.active { display: block; }
+      .modal-input {
+        width: 100%; padding: 10px 14px; border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary); color: var(--text-primary);
+        font-family: inherit; font-size: 14px;
+        margin-bottom: 12px; direction: ltr; text-align: left;
       }
-      /* Clickable apartment cards */
-      [data-testid^="card-apartment-"] {
-        cursor: pointer !important;
+      .modal-close-btn {
+        background: none; border: none; color: var(--text-secondary);
+        font-size: 24px; cursor: pointer;
       }
-      [data-testid^="card-apartment-"]:hover {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 8px 25px rgba(59,130,246,0.15) !important;
-      }
-      /* Apartment detail modal */
+      .modal-empty { color: var(--text-secondary); text-align: center; display: none; }
+
+      /* ==================== Apartment Detail Modal (ImmoScout style) ==================== */
       #apt-detail-overlay {
-        display: none;
-        position: fixed;
+        display: none; position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.7);
-        z-index: 10010;
+        background: var(--overlay-bg); z-index: 10010;
       }
       #apt-detail-overlay.active { display: block; }
       #apt-detail-modal {
@@ -159,92 +518,204 @@
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         z-index: 10011;
-        background: #0f172a;
-        border: 2px solid #3b82f6;
-        border-radius: 20px;
-        width: 92%; max-width: 600px;
-        max-height: 88vh;
-        overflow-y: auto;
-        font-family: 'Tajawal', sans-serif;
-        direction: rtl;
-        box-shadow: 0 25px 80px rgba(0,0,0,0.6);
-        display: none;
-      }
-      #apt-detail-modal.active { display: block; }
-      #apt-detail-modal::-webkit-scrollbar { width: 6px; }
-      #apt-detail-modal::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-      .adm-gallery {
-        position: relative;
-        width: 100%; height: 250px;
+        background: var(--bg-primary);
+        border-radius: 16px;
+        width: 90vw; max-width: 1100px;
+        height: 90vh;
         overflow: hidden;
-        border-radius: 18px 18px 0 0;
-        background: #1e293b;
+        font-family: 'Inter', 'Tajawal', sans-serif;
+        box-shadow: 0 25px 80px rgba(0,0,0,0.55);
+        display: none;
+        flex-direction: column;
       }
-      .adm-gallery img {
-        width: 100%; height: 250px; object-fit: cover;
-        display: block;
-        cursor: zoom-in;
+      html[dir="rtl"] #apt-detail-modal { font-family: 'Tajawal', 'Inter', sans-serif; }
+      #apt-detail-modal.active { display: flex; }
+      /* Gallery */
+      .adm-gallery {
+        position: relative; width: 100%; height: 340px; min-height: 180px;
+        overflow: hidden; flex-shrink: 0; background: #0a0a0a;
       }
+      .adm-gallery img { width: 100%; height: 340px; object-fit: cover; display: block; cursor: zoom-in; }
       .adm-gallery-btn {
         position: absolute; top: 50%; transform: translateY(-50%);
         background: rgba(0,0,0,0.55); border: none;
         color: #fff; font-size: 22px;
-        width: 40px; height: 40px; border-radius: 50%;
+        width: 42px; height: 42px; border-radius: 50%;
         cursor: pointer; display: flex;
         align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
-        z-index: 2; transition: background 0.2s;
+        backdrop-filter: blur(4px); z-index: 2; transition: background 0.2s;
       }
-      .adm-gallery-btn:hover { background: rgba(0,0,0,0.8); }
-      .adm-gallery-prev { left: 10px; }
-      .adm-gallery-next { right: 10px; }
+      .adm-gallery-btn:hover { background: rgba(0,0,0,0.85); }
+      .adm-gallery-prev { left: 14px; }
+      .adm-gallery-next { right: 14px; }
       .adm-gallery-counter {
-        position: absolute; bottom: 10px; left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.6);
-        color: #fff; font-size: 12px;
-        padding: 3px 12px; border-radius: 12px;
-        backdrop-filter: blur(4px);
-        z-index: 2;
+        position: absolute; bottom: 12px; right: 14px;
+        background: rgba(0,0,0,0.65); color: #fff; font-size: 12px; font-weight: 600;
+        padding: 4px 12px; border-radius: 20px; backdrop-filter: blur(4px); z-index: 2;
+        display: flex; align-items: center; gap: 5px;
+      }
+      .adm-img-count-pill {
+        position: absolute; bottom: 12px; left: 14px;
+        background: rgba(0,0,0,0.65); color: #fff; font-size: 12px; font-weight: 600;
+        padding: 5px 12px; border-radius: 20px;
+        cursor: pointer; z-index: 2; display: flex; align-items: center; gap: 6px;
       }
       .adm-no-img {
-        width: 100%; height: 120px;
-        background: linear-gradient(135deg, #1e293b, #334155);
-        border-radius: 18px 18px 0 0;
+        width: 100%; height: 160px; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--bg-surface), var(--bg-secondary));
         display: flex; align-items: center; justify-content: center;
-        color: #475569; font-size: 48px;
+        color: var(--text-muted); font-size: 56px;
       }
-      /* Fullscreen image lightbox */
+      .adm-close {
+        position: absolute; top: 14px; left: 14px;
+        background: rgba(0,0,0,0.62); border: none;
+        color: #fff; font-size: 16px;
+        width: 36px; height: 36px; border-radius: 50%;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px); z-index: 3;
+      }
+      .adm-close:hover { background: rgba(0,0,0,0.9); }
+      /* Two-column layout */
+      .adm-layout {
+        display: grid;
+        grid-template-columns: 1fr 290px;
+        flex: 1; overflow: hidden; min-height: 0;
+      }
+      .adm-main {
+        overflow-y: auto; padding: 22px 28px 36px;
+      }
+      .adm-main::-webkit-scrollbar { width: 5px; }
+      .adm-main::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+      .adm-sidebar {
+        overflow-y: auto; padding: 20px 18px 28px;
+        background: var(--bg-surface);
+        border-left: 1px solid var(--border-color);
+      }
+      .adm-sidebar::-webkit-scrollbar { width: 5px; }
+      .adm-sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+      /* Header */
+      .adm-type-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; margin-bottom: 3px; }
+      .adm-title {
+        color: var(--text-primary); font-size: 19px;
+        font-weight: 700; line-height: 1.35; margin: 0 0 14px;
+      }
+      /* Price */
+      .adm-price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+      .adm-price-main { font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+      .adm-price-label {
+        font-size: 13px; color: var(--text-secondary);
+        background: var(--bg-secondary); border: 1px solid var(--border-color);
+        padding: 2px 10px; border-radius: 20px;
+      }
+      /* Details row */
+      .adm-details-row {
+        display: flex; align-items: center; flex-wrap: wrap;
+        font-size: 14px; color: var(--text-secondary); margin-bottom: 10px;
+      }
+      .adm-detail-sep { margin: 0 8px; color: var(--text-muted); }
+      /* Address */
+      .adm-address {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 14px; color: #3b82f6; margin-bottom: 22px;
+      }
+      .dark .adm-address { color: #60a5fa; }
+      /* Section */
+      .adm-section { padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--border-color); }
+      .adm-section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 14px; }
+      /* Features grid */
+      .adm-features-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+      }
+      .adm-feat-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: 10px;
+        border: 1px solid var(--border-color); background: var(--bg-surface);
+        font-size: 13px; color: var(--text-primary);
+      }
+      .adm-feat-item.inactive { opacity: 0.4; }
+      .adm-feat-icon { font-size: 17px; flex-shrink: 0; }
+      /* Cost block */
+      .adm-cost-block {
+        background: var(--bg-surface); border: 1px solid var(--border-color);
+        border-radius: 12px; padding: 16px 18px;
+      }
+      .adm-cost-main { font-size: 24px; font-weight: 800; color: var(--text-primary); padding-bottom: 10px; }
+      .adm-cost-bar { height: 6px; border-radius: 3px; background: var(--bg-secondary); margin-bottom: 14px; overflow: hidden; }
+      .adm-cost-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6 70%, #f59e0b); border-radius: 3px; }
+      .adm-cost-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 9px 0; border-top: 1px solid var(--border-color);
+        font-size: 14px;
+      }
+      .adm-cost-label { color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+      .adm-cost-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+      .adm-cost-val { font-weight: 700; color: var(--text-primary); }
+      /* Meta */
+      .adm-meta-row {
+        display: flex; gap: 8px; align-items: flex-start;
+        font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;
+      }
+      /* Notes */
+      .adm-notes {
+        font-size: 13px; color: var(--text-secondary);
+        background: var(--bg-secondary); border-radius: 10px;
+        padding: 12px; border: 1px solid var(--border-color);
+        white-space: pre-wrap; line-height: 1.5;
+      }
+      /* Sidebar */
+      .adm-source-card {
+        background: var(--bg-primary); border: 1px solid var(--border-color);
+        border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
+      }
+      .adm-source-name { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+      .adm-source-badge {
+        display: inline-block; font-size: 11px; font-weight: 700;
+        padding: 3px 10px; border-radius: 20px; margin-bottom: 0;
+      }
+      .adm-btn-visit {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; padding: 13px; border-radius: 10px;
+        background: var(--accent); color: #fff; border: none;
+        font-size: 14px; font-weight: 700; cursor: pointer;
+        font-family: inherit; text-decoration: none; margin-bottom: 10px;
+        transition: filter 0.2s;
+      }
+      .adm-btn-visit:hover { filter: brightness(1.1); }
+      .adm-btn-close-sb {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        width: 100%; padding: 11px; border-radius: 10px;
+        background: transparent; color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        font-size: 14px; cursor: pointer; font-family: inherit;
+        margin-bottom: 18px; transition: all 0.15s;
+      }
+      .adm-btn-close-sb:hover { border-color: var(--accent); color: var(--text-primary); }
+      .adm-divider { height: 1px; background: var(--border-color); margin: 14px 0; }
+
+      /* ==================== Fullscreen Lightbox ==================== */
       #img-lightbox {
         display: none; position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
         background: rgba(0,0,0,0.92);
-        z-index: 10020;
-        align-items: center; justify-content: center;
+        z-index: 10020; align-items: center; justify-content: center;
       }
       #img-lightbox.active { display: flex; }
-      #img-lightbox img {
-        max-width: 95vw; max-height: 90vh;
-        object-fit: contain; border-radius: 8px;
-      }
+      #img-lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
       #img-lightbox .lb-close {
         position: absolute; top: 16px; left: 16px;
         background: rgba(255,255,255,0.15); border: none;
-        color: #fff; font-size: 28px;
-        width: 44px; height: 44px; border-radius: 50%;
-        cursor: pointer; display: flex;
-        align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
+        color: #fff; font-size: 28px; width: 44px; height: 44px;
+        border-radius: 50%; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; backdrop-filter: blur(4px);
       }
       #img-lightbox .lb-close:hover { background: rgba(255,255,255,0.3); }
       #img-lightbox .lb-nav {
         position: absolute; top: 50%; transform: translateY(-50%);
         background: rgba(255,255,255,0.15); border: none;
-        color: #fff; font-size: 28px;
-        width: 50px; height: 50px; border-radius: 50%;
-        cursor: pointer; display: flex;
-        align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
+        color: #fff; font-size: 28px; width: 50px; height: 50px;
+        border-radius: 50%; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; backdrop-filter: blur(4px);
       }
       #img-lightbox .lb-nav:hover { background: rgba(255,255,255,0.3); }
       #img-lightbox .lb-prev { left: 16px; }
@@ -252,111 +723,403 @@
       #img-lightbox .lb-counter {
         position: absolute; bottom: 20px; left: 50%;
         transform: translateX(-50%);
-        background: rgba(0,0,0,0.6);
-        color: #fff; font-size: 14px;
+        background: rgba(0,0,0,0.6); color: #fff; font-size: 14px;
         padding: 6px 18px; border-radius: 20px;
       }
-      .adm-close {
-        position: absolute; top: 12px; left: 12px;
-        background: rgba(0,0,0,0.6); border: none;
-        color: #fff; font-size: 22px;
-        width: 36px; height: 36px; border-radius: 50%;
-        cursor: pointer; display: flex;
-        align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
-        z-index: 2;
+
+      /* ==================== Deleted Panel ==================== */
+      .deleted-panel {
+        border-color: var(--danger) !important;
+        width: 90%; max-width: 700px;
+        max-height: 80vh; overflow-y: auto;
       }
-      .adm-close:hover { background: rgba(0,0,0,0.8); }
-      .adm-body { padding: 20px 24px 24px; }
-      .adm-source {
-        display: inline-block; font-size: 11px;
-        padding: 3px 10px; border-radius: 12px;
-        font-weight: 600; margin-bottom: 8px;
+      .deleted-header {
+        display: flex; justify-content: space-between;
+        align-items: center; margin-bottom: 16px;
       }
-      .adm-title {
-        color: #f8fafc; font-size: 18px;
-        font-weight: 700; line-height: 1.4;
-        margin: 0 0 6px 0;
+      .deleted-list { display: flex; flex-direction: column; gap: 12px; }
+      .deleted-card {
+        background: var(--bg-primary); border-radius: 12px;
+        padding: 14px; border: 1px solid var(--border-color);
+        display: flex; gap: 12px; align-items: flex-start;
       }
-      .adm-address {
-        color: #94a3b8; font-size: 13px;
-        display: flex; align-items: center; gap: 6px;
-        margin-bottom: 16px;
+      .deleted-card img {
+        width: 80px; height: 60px; border-radius: 8px;
+        object-fit: cover; flex-shrink: 0;
       }
-      .adm-stats {
-        display: grid; grid-template-columns: repeat(3, 1fr);
-        gap: 10px; margin-bottom: 16px;
+      .deleted-card-info { flex: 1; min-width: 0; }
+      .deleted-card-title {
+        color: var(--text-primary); font-weight: 600;
+        font-size: 14px; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
       }
-      .adm-stat {
-        background: #1e293b; border: 1px solid #334155;
-        border-radius: 12px; padding: 12px; text-align: center;
+      .deleted-card-meta { color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+      .deleted-card-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+      .deleted-card-actions button, .deleted-card-actions a {
+        padding: 4px 10px; border-radius: 6px;
+        border: 1px solid; background: transparent;
+        cursor: pointer; font-size: 12px;
+        font-family: inherit; text-decoration: none; text-align: center;
       }
-      .adm-stat-val {
-        color: #f8fafc; font-size: 20px; font-weight: 800;
+
+      /* ==================== Light Mode React Override ==================== */
+      html.light #root { filter: invert(1) hue-rotate(180deg); }
+      html.light #root img, html.light #root video { filter: invert(1) hue-rotate(180deg); }
+
+      /* Clickable apartment cards */
+      [data-testid^="card-apartment-"] { cursor: pointer !important; }
+      [data-testid^="card-apartment-"]:hover {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 8px 25px rgba(59,130,246,0.15) !important;
       }
-      .adm-stat-val.price { color: #34d399; }
-      .adm-stat-label {
-        color: #64748b; font-size: 11px; margin-top: 2px;
+
+      /* ==================== Update Notification Banner ==================== */
+      #update-banner {
+        display: none;
+        position: sticky;
+        top: 54px; /* below nav */
+        z-index: 9998;
+        background: linear-gradient(90deg, var(--accent) 0%, #7c3aed 100%);
+        color: #fff;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        animation: slideDown 0.3s ease;
       }
-      .adm-features {
-        display: flex; flex-wrap: wrap; gap: 8px;
-        margin-bottom: 16px;
+      #update-banner.active { display: flex; }
+      @keyframes slideDown {
+        from { transform: translateY(-100%); opacity: 0; }
+        to   { transform: translateY(0);     opacity: 1; }
       }
-      .adm-feat {
-        font-size: 12px; padding: 5px 12px;
-        border-radius: 20px; border: 1px solid;
+      .update-banner-msg { flex: 1; }
+      .update-banner-items { display: flex; gap: 8px; flex-wrap: wrap; }
+      .update-banner-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s;
       }
-      .adm-feat-yes { background: #064e3b33; color: #34d399; border-color: #065f4633; }
-      .adm-feat-no { background: #1e293b; color: #475569; border-color: #334155; text-decoration: line-through; }
-      .adm-notes {
-        background: #1e293b; border: 1px solid #334155;
-        border-radius: 12px; padding: 12px;
-        color: #cbd5e1; font-size: 13px;
-        line-height: 1.6; margin-bottom: 16px;
+      .update-banner-chip:hover { background: rgba(255,255,255,0.35); }
+      .update-banner-close {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0 4px;
+        opacity: 0.8;
+        flex-shrink: 0;
       }
-      .adm-meta {
-        display: flex; flex-wrap: wrap; gap: 12px;
-        color: #64748b; font-size: 12px;
-        margin-bottom: 16px;
-        padding-top: 12px;
-        border-top: 1px solid #1e293b;
+      .update-banner-close:hover { opacity: 1; }
+      /* No-update subtle badge */
+      #update-banner.no-update {
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 400;
+        font-size: 13px;
       }
-      .adm-actions {
-        display: flex; gap: 10px;
+
+      /* ==================== My Areas Modal ==================== */
+      #my-areas-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: var(--overlay-bg);
+        z-index: 11000;
+        align-items: center;
+        justify-content: center;
       }
-      .adm-actions a, .adm-actions button {
-        flex: 1; padding: 12px;
-        border-radius: 12px; font-size: 14px;
-        font-weight: 700; cursor: pointer;
-        font-family: 'Tajawal', sans-serif;
-        text-align: center; text-decoration: none;
-        transition: all 0.2s;
-        display: flex; align-items: center;
-        justify-content: center; gap: 6px;
+      #my-areas-overlay.active { display: flex; }
+      #my-areas-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 28px 26px 24px;
+        width: 440px;
+        max-width: calc(100vw - 32px);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
       }
-      .adm-btn-primary {
-        background: #3b82f6; color: #fff; border: none;
+      .my-areas-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
       }
-      .adm-btn-primary:hover { background: #2563eb; }
-      .adm-btn-secondary {
-        background: transparent; color: #94a3b8;
-        border: 1px solid #334155;
+      .my-areas-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
       }
-      .adm-btn-secondary:hover { border-color: #3b82f6; color: #f8fafc; }
+      .my-areas-sub {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: -10px 0 0;
+      }
+      /* Tag chips */
+      #areas-tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: 36px;
+      }
+      .area-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px 5px 14px;
+        border-radius: 20px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .area-tag-remove {
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        opacity: 0.8;
+        background: none;
+        border: none;
+        color: #fff;
+        padding: 0;
+      }
+      .area-tag-remove:hover { opacity: 1; }
+      /* Input row */
+      .my-areas-input-row {
+        display: flex;
+        gap: 8px;
+      }
+      #area-new-input {
+        flex: 1;
+        padding: 9px 14px;
+        border-radius: 10px;
+        border: 2px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      #area-new-input:focus { border-color: var(--accent); }
+      #area-new-input::placeholder { color: var(--text-muted); }
+      #area-add-btn {
+        padding: 9px 18px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.2s;
+        white-space: nowrap;
+      }
+      #area-add-btn:hover { background: var(--accent-hover); }
+      /* Suggestions dropdown */
+      #area-suggestions {
+        display: none;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-surface);
+        max-height: 180px;
+        overflow-y: auto;
+        margin-top: -10px;
+      }
+      #area-suggestions.active { display: block; }
+      .area-sug-item {
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        transition: background 0.15s;
+      }
+      .area-sug-item:last-child { border-bottom: none; }
+      .area-sug-item:hover { background: var(--bg-surface-hover); }
+      /* Footer buttons */
+      .my-areas-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding-top: 4px;
+        border-top: 1px solid var(--border-color);
+      }
+      #areas-save-btn {
+        padding: 9px 22px;
+        border-radius: 10px;
+        border: none;
+        background: var(--success);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.2s;
+      }
+      #areas-save-btn:hover { filter: brightness(1.1); }
+      #areas-cancel-btn {
+        padding: 9px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 14px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.2s;
+      }
+      #areas-cancel-btn:hover { background: var(--bg-surface-hover); }
+
+      /* ==================== Responsive ==================== */
+      @media (max-width: 768px) {
+        /* Nav: stack search below brand+actions */
+        #main-nav {
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 10px 12px;
+        }
+        .nav-brand { font-size: 15px; }
+        .nav-brand-icon { font-size: 20px; }
+        .city-search-wrapper {
+          order: 3;
+          flex-basis: 100%;
+          max-width: 100%;
+        }
+        /* Nav actions: scrollable row */
+        .nav-actions {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          gap: 4px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          max-width: calc(100vw - 130px);
+        }
+        .nav-actions::-webkit-scrollbar { display: none; }
+        .nav-btn {
+          padding: 6px 8px;
+          font-size: 11px;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        /* Monitor bar scrollable */
+        #monitor-bar {
+          justify-content: flex-start;
+          overflow-x: auto;
+          gap: 6px;
+          padding: 8px 12px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        #monitor-bar::-webkit-scrollbar { display: none; }
+        .area-btn { flex-shrink: 0; }
+        /* Search header stack */
+        .search-header { flex-wrap: wrap; gap: 8px; padding: 14px 0 6px; }
+        .search-info h2 { font-size: 16px; }
+        /* Cards: single column */
+        .card-grid { grid-template-columns: 1fr; gap: 12px; }
+        /* Search results padding */
+        #search-results { padding: 0 10px 24px; }
+        /* Detail modal — bottom sheet on mobile */
+        #apt-detail-modal {
+          width: 100%; max-width: 100%;
+          top: auto; bottom: 0; left: 0; right: 0;
+          transform: none;
+          border-radius: 20px 20px 0 0;
+          height: 94vh;
+          border-left: none; border-right: none; border-bottom: none;
+        }
+        /* Gallery shorter on mobile */
+        .adm-gallery, .adm-gallery img { height: 210px; }
+        /* Stack columns on mobile */
+        .adm-layout { grid-template-columns: 1fr; }
+        .adm-sidebar { border-left: none; border-top: 1px solid var(--border-color); }
+        .adm-main { padding: 16px 16px 24px; }
+        .adm-title { font-size: 16px; }
+        .adm-price-main { font-size: 22px; }
+        .adm-features-grid { grid-template-columns: 1fr 1fr; }
+        /* Loading box smaller */
+        .loading-box { padding: 28px 24px; }
+        /* Modals full-width */
+        .modal-panel {
+          width: 92%;
+          min-width: unset;
+          padding: 20px 18px;
+        }
+        /* Deleted panel */
+        .deleted-panel {
+          width: 100%;
+          max-width: 100%;
+          top: auto;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          transform: none;
+          border-radius: 20px 20px 0 0;
+          max-height: 85vh;
+          border-left: none;
+          border-right: none;
+          border-bottom: none;
+        }
+        /* Lightbox nav buttons closer to edge */
+        #img-lightbox .lb-prev { left: 6px; }
+        #img-lightbox .lb-next { right: 6px; }
+        /* Login modal */
+        #login-panel {
+          width: 92%;
+          min-width: unset;
+        }
+        /* s-card full width already 1fr, but ensure touch target */
+        .s-card-stat-val { font-size: 15px; }
+        .s-card-body { padding: 12px; }
+      }
+
+      /* Very small phones */
+      @media (max-width: 380px) {
+        .nav-btn { padding: 5px 6px; font-size: 10px; }
+        .nav-brand span:last-child { display: none; }
+        .adm-features-grid { grid-template-columns: 1fr; }
+        .adm-price-main { font-size: 20px; }
+      }
     </style>
+    <script>
+      // Apply saved theme and language IMMEDIATELY to prevent flash
+      (function() {
+        var theme = localStorage.getItem('theme') || 'dark';
+        var lang = localStorage.getItem('lang') || 'de';
+        // Remove both then add the correct one (safe with any other classes)
+        document.documentElement.classList.remove('dark', 'light');
+        document.documentElement.classList.add(theme);
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      })();
+    </script>
     <script>
       // Area filter + user email: intercept fetch to add ?area= parameter and X-User-Email header
       (function() {
-        const currentArea = localStorage.getItem('selectedArea') || 'all';
-        const originalFetch = window.fetch;
+        var currentArea = localStorage.getItem('selectedArea') || 'all';
+        var originalFetch = window.fetch;
         window.fetch = function(url, options) {
           if (typeof url === 'string' && url.includes('/api/apartments') && !url.includes('?area=') && !url.includes('&area=')) {
-            const separator = url.includes('?') ? '&' : '?';
+            var separator = url.includes('?') ? '&' : '?';
             url = url + separator + 'area=' + encodeURIComponent(currentArea);
           }
-          // Add user email header for all API calls
           if (typeof url === 'string' && url.includes('/api/')) {
-            const userEmail = localStorage.getItem('userEmail');
+            var userEmail = localStorage.getItem('userEmail');
             if (userEmail) {
               options = options || {};
               options.headers = options.headers || {};
@@ -374,24 +1137,18 @@
     <script>
       // Notification + Sound for new apartments
       (function() {
-        let lastCount = -1;
-        const SOUND_URL = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAAD/AP8A/wD/AP8A/wD+AP4A/gD+APwA/AD8APwA+gD6APoA+gD4APgA+AD4APYA9gD2APYA9ADzAPQA9ADyAPIA8gDyAPAA8ADwAPAA7gDuAO4A7gDsAOwA7ADsAOoA6gDqAOoA6ADmAOYA5gDkAOIA4gDiAOAA3gDeAN4A3ADYANQA1ADQAM4AzADKAMgAxgDCAMIAwAC+ALwAugC6ALgAtgC0ALQAsgCwALAAsgC4AL4AxADKANIA2ADeAOQA6gDwAPQA+AD6APwA/AD8APwA/AD8APwA/AD+AP4A/gD+AP4AAAEAAQABAAEAAQABAgECAQIBAgECAQIBAgECAQIBAgECAQIBAgEAAQABAAEAAQABAAH+AP4A/gD+APwA/AD8APwA+gD6APoA+gD4APgA+AD4APYA9gD0APQA';
-
+        var lastCount = -1;
         if ('Notification' in window && Notification.permission === 'default') {
           Notification.requestPermission();
         }
-
         function playSound() {
           try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            // Play a pleasant notification chime
-            [523.25, 659.25, 783.99].forEach((freq, i) => {
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.frequency.value = freq;
-              osc.type = 'sine';
+            var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            [523.25, 659.25, 783.99].forEach(function(freq, i) {
+              var osc = ctx.createOscillator();
+              var gain = ctx.createGain();
+              osc.connect(gain); gain.connect(ctx.destination);
+              osc.frequency.value = freq; osc.type = 'sine';
               gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
               gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.15 + 0.4);
               osc.start(ctx.currentTime + i * 0.15);
@@ -399,64 +1156,115 @@
             });
           } catch(e) {}
         }
-
         function checkNew() {
-          fetch('/api/apartments')
-            .then(r => r.json())
-            .then(apts => {
-              const newApts = apts.filter(a => a.isNew);
-              const count = newApts.length;
-              if (lastCount === -1) { lastCount = count; return; }
-              if (count > lastCount) {
-                const diff = count - lastCount;
-                document.title = '🔴 ' + diff + ' شقة جديدة! - شقق بوكستيهودة 2026';
-                playSound();
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  const n = new Notification('🏠 شقق جديدة في بوكستيهودة!', {
-                    body: diff + ' شقة جديدة متاحة الآن',
-                    icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"%3E%3Crect x="4" y="18" width="32" height="18" rx="2" fill="%234b8bf4" opacity="0.3"/%3E%3Cpath d="M20 4 L36 18 L4 18 Z" fill="%234b8bf4"/%3E%3C/svg%3E',
-                    requireInteraction: true
-                  });
-                  n.onclick = () => { window.focus(); n.close(); };
-                }
-                setTimeout(() => { document.title = 'شقق بوكستيهودة 2026'; }, 30000);
+          fetch('/api/apartments').then(function(r){ return r.json(); }).then(function(apts) {
+            var newApts = apts.filter(function(a){ return a.isNew; });
+            var count = newApts.length;
+            if (lastCount === -1) { lastCount = count; return; }
+            if (count > lastCount) {
+              var diff = count - lastCount;
+              var lang = localStorage.getItem('lang') || 'de';
+              document.title = '\ud83d\udd34 ' + diff + (lang === 'ar' ? ' \u0634\u0642\u0629 \u062c\u062f\u064a\u062f\u0629!' : ' neue Wohnungen!');
+              playSound();
+              if ('Notification' in window && Notification.permission === 'granted') {
+                var n = new Notification(lang === 'ar' ? '\ud83c\udfe0 \u0634\u0642\u0642 \u062c\u062f\u064a\u062f\u0629!' : '\ud83c\udfe0 Neue Wohnungen!', {
+                  body: diff + (lang === 'ar' ? ' \u0634\u0642\u0629 \u062c\u062f\u064a\u062f\u0629 \u0645\u062a\u0627\u062d\u0629' : ' neue Wohnungen gefunden'),
+                  requireInteraction: true
+                });
+                n.onclick = function() { window.focus(); n.close(); };
               }
-              lastCount = count;
-            })
-            .catch(() => {});
+              setTimeout(function() { document.title = 'Wohnungsfinder Deutschland'; }, 30000);
+            }
+            lastCount = count;
+          }).catch(function(){});
         }
-
-        setInterval(checkNew, 60000); // check every 1 minute
-        setTimeout(checkNew, 3000); // initial check after 3s
+        setInterval(checkNew, 60000);
+        setTimeout(checkNew, 3000);
       })();
     </script>
   </head>
   <body>
-    <div id="area-filter-bar">
-      <label>📍 المنطقة:</label>
-      <button class="area-btn" data-area="all">الكل</button>
-      <button class="area-btn" data-area="Buxtehude">Buxtehude</button>
-      <button class="area-btn" data-area="Neukloster">Neukloster</button>
-      <button class="area-btn" data-area="Neu Wulmstorf">Neu Wulmstorf</button>
-      <button id="settings-btn">⚙️ إشعارات التلغرام</button>
-      <button id="mark-seen-btn" class="area-btn" style="background:#065f46;border-color:#065f46;color:#fff;">👁 تم المشاهدة</button>
-      <button id="login-btn" class="area-btn" style="background:#1e3a5f;border-color:#3b82f6;color:#93c5fd;">🔑 تسجيل دخول</button>
-      <button id="deleted-btn" class="area-btn" style="background:#7f1d1d;border-color:#991b1b;color:#fca5a5;">🗑️ المحذوفة <span id="deleted-count" class="area-count">0</span></button>
+    <!-- ==================== Main Navigation ==================== -->
+    <nav id="main-nav">
+      <div class="nav-brand">
+        <span class="nav-brand-icon">🏠</span>
+        <span id="app-title" data-i18n="appName">Wohnungsfinder</span>
+      </div>
+      <div class="city-search-wrapper">
+        <input type="text" id="city-input" data-i18n-placeholder="searchPlaceholder" placeholder="Stadt suchen..." autocomplete="off" />
+        <button id="city-search-btn" title="Search">🔍</button>
+        <div id="city-dropdown" class="city-dropdown"></div>
+      </div>
+      <div class="nav-actions">
+        <button id="lang-toggle" class="nav-btn">العربية</button>
+        <button id="theme-toggle" class="nav-btn">☀️</button>
+        <button id="mark-seen-btn" class="nav-btn nav-btn-green" data-i18n="markSeen">👁 Gesehen</button>
+        <button id="login-btn" class="nav-btn nav-btn-blue" data-i18n="login">🔑 Login</button>
+        <button id="deleted-btn" class="nav-btn nav-btn-red">🗑️ <span data-i18n="deleted">Gelöschte</span> <span id="deleted-count" class="area-count">0</span></button>
+      </div>
+    </nav>
+
+    <!-- ==================== Update Notification Banner ==================== -->
+    <div id="update-banner">
+      <div class="update-banner-items" id="update-banner-items"></div>
+      <button class="update-banner-close" id="update-banner-close" title="Schließen">✕</button>
     </div>
-    <div id="settings-overlay"></div>
-    <div id="settings-panel">
-      <h3>📱 إشعارات التلغرام</h3>
-      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px 0;">اختر المناطق اللي تريد تتلقى إشعارات تلغرام لها:</p>
-      <label><input type="checkbox" id="tg-buxtehude" value="Buxtehude"> Buxtehude</label>
-      <label><input type="checkbox" id="tg-neukloster" value="Neukloster"> Neukloster</label>
-      <label><input type="checkbox" id="tg-neuwulmstorf" value="Neu Wulmstorf"> Neu Wulmstorf</label>
-      <button class="save-btn" id="save-tg-settings">💾 حفظ الإعدادات</button>
-      <p id="tg-status" style="color:#22c55e;font-size:13px;text-align:center;margin:8px 0 0 0;display:none;"></p>
+
+    <!-- ==================== Monitor Area Filter ==================== -->
+    <div id="monitor-bar">
+      <button class="area-btn active" data-area="all" data-i18n="all">Alle</button>
+      <!-- dynamic area buttons inserted by JS -->
+      <button id="my-areas-btn" class="area-btn" style="margin-inline-start:auto;border-color:var(--accent);color:var(--accent);" data-i18n="myAreasMgr">⚙️ Meine Gebiete</button>
     </div>
-    <!-- Apartment detail modal -->
+
+    <!-- ==================== My Areas Modal ==================== -->
+    <div id="my-areas-overlay">
+      <div id="my-areas-panel">
+        <div class="my-areas-header">
+          <h3 data-i18n="myAreasTitle">📍 Meine Gebiete</h3>
+          <button id="close-my-areas" class="modal-close-btn">✕</button>
+        </div>
+        <p class="my-areas-sub" data-i18n="myAreasSub">Füge deine bevorzugten Gebiete hinzu – sie ersetzen die Standard-Gebiete.</p>
+        <div id="areas-tag-list"></div>
+        <div class="my-areas-input-row">
+          <input id="area-new-input" type="text" data-i18n-placeholder="myAreasInputPlaceholder" placeholder="Gebiet eingeben..." autocomplete="off" />
+          <button id="area-add-btn" data-i18n="myAreasAdd">＋ Hinzufügen</button>
+        </div>
+        <div id="area-suggestions"></div>
+        <div class="my-areas-footer">
+          <button id="areas-cancel-btn" data-i18n="close">Abbrechen</button>
+          <button id="areas-save-btn" data-i18n="save">💾 Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== Search Loading ==================== -->
+    <div id="search-loading">
+      <div class="loading-box">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" data-i18n="searching">Suche läuft...</div>
+        <div class="loading-sub" data-i18n="searchingSub">4 Quellen werden durchsucht</div>
+      </div>
+    </div>
+
+    <!-- ==================== Search Results ==================== -->
+    <div id="search-results">
+      <div class="search-header">
+        <button class="search-back-btn" id="search-back" data-i18n="back">← Zurück</button>
+        <div class="search-info">
+          <h2 id="search-title"></h2>
+          <span id="search-count"></span>
+        </div>
+      </div>
+      <div class="search-source-filter" id="search-source-filter"></div>
+      <div class="card-grid" id="search-cards"></div>
+    </div>
+
+    <!-- ==================== Apartment Detail Modal ==================== -->
     <div id="apt-detail-overlay"></div>
     <div id="apt-detail-modal"></div>
-    <!-- Fullscreen image lightbox -->
+
+    <!-- ==================== Fullscreen Lightbox ==================== -->
     <div id="img-lightbox">
       <button class="lb-close" onclick="closeLightbox()">✕</button>
       <button class="lb-nav lb-prev" onclick="lbNav(-1)">&#8250;</button>
@@ -464,319 +1272,661 @@
       <button class="lb-nav lb-next" onclick="lbNav(1)">&#8249;</button>
       <div class="lb-counter"><span id="lb-idx">1</span> / <span id="lb-total">1</span></div>
     </div>
-    <!-- Login modal -->
-    <div id="login-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10015;"></div>
-    <div id="login-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10016;background:#1e293b;border:2px solid #3b82f6;border-radius:16px;padding:24px 28px;min-width:340px;font-family:'Tajawal',sans-serif;direction:rtl;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-      <h3 style="color:#f8fafc;margin:0 0 12px 0;font-size:18px;">🔑 تسجيل الدخول</h3>
-      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px 0;">أدخل إيميلك لحفظ واسترجاع المفضلات والتواصل</p>
-      <input id="login-email" type="email" placeholder="example@email.com" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:'Tajawal',sans-serif;font-size:14px;margin-bottom:12px;direction:ltr;text-align:left;box-sizing:border-box;" />
-      <button id="login-submit" style="width:100%;padding:10px;border-radius:10px;border:none;background:#3b82f6;color:#fff;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">🔑 دخول</button>
-      <button id="logout-btn" style="display:none;width:100%;padding:10px;border-radius:10px;border:1px solid #ef4444;background:transparent;color:#fca5a5;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;">🚪 تسجيل خروج</button>
-      <p id="login-status" style="color:#22c55e;font-size:13px;text-align:center;margin:8px 0 0 0;display:none;"></p>
+
+    <!-- ==================== Login Modal ==================== -->
+    <div id="login-overlay" class="modal-overlay"></div>
+    <div id="login-panel" class="modal-panel">
+      <h3 data-i18n="loginTitle">🔑 Anmelden</h3>
+      <p class="modal-sub" data-i18n="loginSub">E-Mail eingeben zum Speichern:</p>
+      <input id="login-email" type="email" placeholder="example@email.com" class="modal-input" />
+      <button id="login-submit" class="modal-save-btn" data-i18n="loginBtn">🔑 Anmelden</button>
+      <button id="logout-btn" class="modal-danger-btn" style="display:none;" data-i18n="logoutBtn">🚪 Abmelden</button>
+      <p id="login-status" class="modal-status"></p>
     </div>
+
+    <!-- ==================== Deleted Apartments Panel ==================== -->
+    <div id="deleted-overlay" class="modal-overlay"></div>
+    <div id="deleted-panel" class="modal-panel deleted-panel">
+      <div class="deleted-header">
+        <h3 data-i18n="deletedTitle">🗑️ Gelöschte Wohnungen</h3>
+        <button id="close-deleted" class="modal-close-btn">✕</button>
+      </div>
+      <div id="deleted-list" class="deleted-list"></div>
+      <p id="deleted-empty" class="modal-empty" data-i18n="noDeleted">Keine gelöschten Wohnungen</p>
+    </div>
+
+    <!-- ==================== React App ==================== -->
     <div id="root"></div>
+
+    <!-- ==================== i18n System ==================== -->
     <script>
-      // Area filter bar logic
+      var T = {
+        de: {
+          appName: 'Wohnungsfinder',
+          searchPlaceholder: 'Stadt suchen...',
+          search: 'Suchen',
+          all: 'Alle',
+          settings: '\u2699\ufe0f Telegram',
+          markSeen: '\ud83d\udc41 Gesehen',
+          login: '\ud83d\udd11 Login',
+          deleted: 'Gel\u00f6schte',
+          back: '\u2190 Zur\u00fcck',
+          results: 'Ergebnisse',
+          listings: 'Wohnungen',
+          searching: 'Suche l\u00e4uft...',
+          searchingSub: '4 Quellen werden durchsucht',
+          noResults: 'Keine Wohnungen gefunden',
+          price: 'Miete',
+          rooms: 'Zimmer',
+          size: 'Fl\u00e4che',
+          viewOn: 'Ansehen auf',
+          close: 'Schlie\u00dfen',
+          monthlyRent: 'Monatsmiete',
+          room: 'Zimmer',
+          area: 'Fl\u00e4che',
+          noCommission: 'Provisionsfrei',
+          furnished: 'M\u00f6bliert',
+          hasBalcony: 'Balkon',
+          hasGarden: 'Garten',
+          hasParking: 'Parkplatz',
+          telegramSettings: '\ud83d\udcf1 Telegram-Benachrichtigungen',
+          telegramSub: 'Gebiete f\u00fcr Benachrichtigungen w\u00e4hlen:',
+          save: '\ud83d\udcbe Speichern',
+          saved: '\u2705 Gespeichert!',
+          loginTitle: '\ud83d\udd11 Anmelden',
+          loginSub: 'E-Mail eingeben zum Speichern:',
+          loginBtn: '\ud83d\udd11 Anmelden',
+          logoutBtn: '\ud83d\udeaa Abmelden',
+          restore: '\u21a9\ufe0f Wiederherstellen',
+          permDelete: '\u274c Endg\u00fcltig l\u00f6schen',
+          deletedTitle: '\ud83d\uddd1\ufe0f Gel\u00f6schte Wohnungen',
+          noDeleted: 'Keine gel\u00f6schten Wohnungen',
+          byUser: '\ud83d\udc64 Von Ihnen gel\u00f6scht',
+          byPlatform: '\ud83c\udfe2 Von Plattform entfernt',
+          added: 'Hinzugef\u00fcgt',
+          published: 'Ver\u00f6ffentlicht',
+          view: 'Ansehen',
+          saveFailed: 'Speichern fehlgeschlagen',
+          noTelegram: 'Benachrichtigungen aus',
+          invalidEmail: 'Bitte g\u00fcltige E-Mail eingeben',
+          loading: 'Laden...',
+          loggedIn: 'Angemeldet - Daten werden automatisch gespeichert',
+          loggedOut: 'Abgemeldet',
+          restored: 'Wiederhergestellt',
+          confirmPermDelete: 'Endg\u00fcltig l\u00f6schen - nicht r\u00fcckg\u00e4ngig?',
+          myAreasMgr: '\u2699\ufe0f Meine Gebiete',
+          myAreasTitle: '\ud83d\udccd Meine Gebiete',
+          myAreasSub: 'F\u00fcge deine bevorzugten Gebiete hinzu \u2013 sie ersetzen die Standard-Gebiete.',
+          myAreasInputPlaceholder: 'Gebiet eingeben...',
+          myAreasAdd: '\uff0b Hinzuf\u00fcgen',
+          myAreasEmpty: 'Noch keine Gebiete \u2013 Standard wird verwendet.',
+        },
+        ar: {
+          appName: '\u0628\u0627\u062d\u062b \u0627\u0644\u0634\u0642\u0642',
+          searchPlaceholder: '\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u062f\u064a\u0646\u0629...',
+          search: '\u0628\u062d\u062b',
+          all: '\u0627\u0644\u0643\u0644',
+          settings: '\u2699\ufe0f \u062a\u0644\u063a\u0631\u0627\u0645',
+          markSeen: '\ud83d\udc41 \u0627\u0644\u0645\u0634\u0627\u0647\u062f\u0629',
+          login: '\ud83d\udd11 \u062f\u062e\u0648\u0644',
+          deleted: '\u0627\u0644\u0645\u062d\u0630\u0648\u0641\u0629',
+          back: '\u2192 \u0631\u062c\u0648\u0639',
+          results: '\u0646\u062a\u0627\u0626\u062c',
+          listings: '\u0634\u0642\u0629',
+          searching: '\u062c\u0627\u0631\u064a \u0627\u0644\u0628\u062d\u062b...',
+          searchingSub: '\u064a\u062a\u0645 \u0627\u0644\u0628\u062d\u062b \u0641\u064a 4 \u0645\u0648\u0627\u0642\u0639',
+          noResults: '\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0634\u0642\u0642',
+          price: '\u0627\u0644\u0625\u064a\u062c\u0627\u0631',
+          rooms: '\u063a\u0631\u0641',
+          size: '\u0627\u0644\u0645\u0633\u0627\u062d\u0629',
+          viewOn: '\u0639\u0631\u0636 \u0639\u0644\u0649',
+          close: '\u0625\u063a\u0644\u0627\u0642',
+          monthlyRent: '\u0627\u0644\u0625\u064a\u062c\u0627\u0631 \u0627\u0644\u0634\u0647\u0631\u064a',
+          room: '\u063a\u0631\u0641\u0629',
+          area: '\u0627\u0644\u0645\u0633\u0627\u062d\u0629',
+          noCommission: '\u0628\u062f\u0648\u0646 \u0639\u0645\u0648\u0644\u0629',
+          furnished: '\u0645\u0641\u0631\u0648\u0634\u0629',
+          hasBalcony: '\u0628\u0644\u0643\u0648\u0646',
+          hasGarden: '\u062d\u062f\u064a\u0642\u0629',
+          hasParking: '\u0645\u0648\u0642\u0641 \u0633\u064a\u0627\u0631\u0629',
+          telegramSettings: '\ud83d\udcf1 \u0625\u0634\u0639\u0627\u0631\u0627\u062a \u0627\u0644\u062a\u0644\u063a\u0631\u0627\u0645',
+          telegramSub: '\u0627\u062e\u062a\u0631 \u0627\u0644\u0645\u0646\u0627\u0637\u0642 \u0644\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a:',
+          save: '\ud83d\udcbe \u062d\u0641\u0638',
+          saved: '\u2705 \u062a\u0645 \u0627\u0644\u062d\u0641\u0638!',
+          loginTitle: '\ud83d\udd11 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644',
+          loginSub: '\u0623\u062f\u062e\u0644 \u0625\u064a\u0645\u064a\u0644\u0643 \u0644\u062d\u0641\u0638 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a:',
+          loginBtn: '\ud83d\udd11 \u062f\u062e\u0648\u0644',
+          logoutBtn: '\ud83d\udeaa \u062e\u0631\u0648\u062c',
+          restore: '\u21a9\ufe0f \u0627\u0633\u062a\u0631\u062c\u0627\u0639',
+          permDelete: '\u274c \u062d\u0630\u0641 \u0646\u0647\u0627\u0626\u064a',
+          deletedTitle: '\ud83d\uddd1\ufe0f \u0627\u0644\u0634\u0642\u0642 \u0627\u0644\u0645\u062d\u0630\u0648\u0641\u0629',
+          noDeleted: '\u0644\u0627 \u062a\u0648\u062c\u062f \u0634\u0642\u0642 \u0645\u062d\u0630\u0648\u0641\u0629',
+          byUser: '\ud83d\udc64 \u062d\u0630\u0641\u062a\u0647 \u0623\u0646\u062a',
+          byPlatform: '\ud83c\udfe2 \u062d\u0630\u0641\u062a\u0647 \u0627\u0644\u0645\u0646\u0635\u0629',
+          added: '\u0623\u0636\u064a\u0641',
+          published: '\u0646\u0634\u0631',
+          view: '\u0639\u0631\u0636',
+          saveFailed: '\u0641\u0634\u0644 \u0627\u0644\u062d\u0641\u0638',
+          noTelegram: '\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a \u0645\u063a\u0644\u0642\u0629',
+          invalidEmail: '\u0623\u062f\u062e\u0644 \u0625\u064a\u0645\u064a\u0644 \u0635\u062d\u064a\u062d',
+          loading: '\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0645\u064a\u0644...',
+          loggedIn: '\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 - \u0633\u064a\u062a\u0645 \u062d\u0641\u0638 \u0628\u064a\u0627\u0646\u0627\u062a\u0643 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b',
+          loggedOut: '\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c',
+          restored: '\u062a\u0645 \u0627\u0633\u062a\u0631\u062c\u0627\u0639',
+          confirmPermDelete: '\u062d\u0630\u0641 \u0646\u0647\u0627\u0626\u064a - \u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0631\u0627\u062c\u0639\u061f',
+          myAreasMgr: '\u2699\ufe0f \u0645\u0646\u0627\u0637\u0642\u064a',
+          myAreasTitle: '\ud83d\udccd \u0645\u0646\u0627\u0637\u0642\u064a \u0627\u0644\u0645\u0641\u0636\u0644\u0629',
+          myAreasSub: '\u0623\u0636\u0641 \u0645\u0646\u0627\u0637\u0642\u0643 \u0627\u0644\u0645\u0641\u0636\u0644\u0629 \u2013 \u062a\u0638\u0647\u0631 \u0628\u062f\u0644 \u0627\u0644\u0645\u0646\u0627\u0637\u0642 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629.',
+          myAreasInputPlaceholder: '\u0627\u0643\u062a\u0628 \u0627\u0633\u0645 \u0645\u0646\u0637\u0642\u0629...',
+          myAreasAdd: '\uff0b \u0625\u0636\u0627\u0641\u0629',
+          myAreasEmpty: '\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0646\u0627\u0637\u0642 \u2013 \u0633\u064a\u062a\u0645 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a.',
+        }
+      };
+
+      function getLang() { return localStorage.getItem('lang') || 'de'; }
+      function t(key) { return (T[getLang()] || T.de)[key] || (T.de)[key] || key; }
+
+      function applyI18n() {
+        var lang = getLang();
+        document.querySelectorAll('[data-i18n]').forEach(function(el) {
+          var key = el.getAttribute('data-i18n');
+          var val = t(key);
+          if (val) el.textContent = val;
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+          var key = el.getAttribute('data-i18n-placeholder');
+          var val = t(key);
+          if (val) el.placeholder = val;
+        });
+        // Update lang toggle button text
+        var langBtn = document.getElementById('lang-toggle');
+        if (langBtn) langBtn.textContent = lang === 'de' ? '\u0627\u0644\u0639\u0631\u0628\u064a\u0629' : 'Deutsch';
+      }
+    </script>
+
+    <!-- ==================== Theme & Language Toggle ==================== -->
+    <script>
       (function() {
-        const currentArea = localStorage.getItem('selectedArea') || 'all';
-        const buttons = document.querySelectorAll('#area-filter-bar .area-btn[data-area]');
-        buttons.forEach(btn => {
-          if (btn.dataset.area === currentArea) btn.classList.add('active');
-          btn.addEventListener('click', () => {
-            const area = btn.dataset.area;
-            localStorage.setItem('selectedArea', area);
-            location.reload();
-          });
+        // Theme toggle
+        var themeBtn = document.getElementById('theme-toggle');
+        function updateThemeBtn() {
+          var theme = localStorage.getItem('theme') || 'dark';
+          themeBtn.textContent = theme === 'dark' ? '\u2600\ufe0f' : '\ud83c\udf19';
+        }
+        updateThemeBtn();
+        themeBtn.addEventListener('click', function() {
+          var current = localStorage.getItem('theme') || 'dark';
+          var next = current === 'dark' ? 'light' : 'dark';
+          localStorage.setItem('theme', next);
+          document.documentElement.classList.remove('dark', 'light');
+          document.documentElement.classList.add(next);
+          updateThemeBtn();
         });
 
-        // Fetch counts for each area and display
-        async function loadCounts() {
+        // Language toggle
+        var langBtn = document.getElementById('lang-toggle');
+        langBtn.addEventListener('click', function() {
+          var current = getLang();
+          var next = current === 'de' ? 'ar' : 'de';
+          localStorage.setItem('lang', next);
+          document.documentElement.lang = next;
+          document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
+          applyI18n();
+        });
+
+        // Apply i18n on load
+        applyI18n();
+      })();
+    </script>
+
+    <!-- ==================== Area Filter Logic ==================== -->
+    <script>
+      (function() {
+        var DEFAULT_AREAS = ['Buxtehude', 'Neukloster', 'Neu Wulmstorf'];
+        var CITIES_LIST = [
+          "Berlin","Hamburg","München","Köln","Frankfurt","Stuttgart","Düsseldorf","Leipzig",
+          "Dortmund","Essen","Bremen","Dresden","Hannover","Nürnberg","Duisburg","Bochum",
+          "Wuppertal","Bielefeld","Bonn","Münster","Karlsruhe","Mannheim","Augsburg",
+          "Wiesbaden","Gelsenkirchen","Mönchengladbach","Braunschweig","Chemnitz","Kiel",
+          "Aachen","Halle","Magdeburg","Freiburg","Krefeld","Lübeck","Oberhausen","Erfurt",
+          "Mainz","Rostock","Kassel","Hagen","Hamm","Saarbrücken","Mülheim","Potsdam",
+          "Ludwigshafen","Oldenburg","Leverkusen","Osnabrück","Solingen","Heidelberg",
+          "Darmstadt","Paderborn","Regensburg","Würzburg","Ingolstadt","Ulm","Heilbronn",
+          "Buxtehude","Stade","Neu Wulmstorf","Neukloster","Harburg","Lüneburg",
+          "Cuxhaven","Celle","Uelzen","Rotenburg","Bamberg","Bayreuth","Passau",
+          "Landshut","Rosenheim","Friedrichshafen","Ravensburg","Göppingen","Aalen"
+        ];
+
+        // Read custom areas from localStorage, fall back to defaults
+        function getMyAreas() {
           try {
-            const res = await fetch('/api/apartments?area=all');
-            const apts = await res.json();
-            const counts = { all: apts.length, Buxtehude: 0, Neukloster: 0, 'Neu Wulmstorf': 0 };
-            apts.forEach(a => { if (counts[a.area] !== undefined) counts[a.area]++; });
-            buttons.forEach(btn => {
-              const c = counts[btn.dataset.area];
+            var saved = localStorage.getItem('myAreas');
+            if (saved) {
+              var arr = JSON.parse(saved);
+              if (Array.isArray(arr) && arr.length > 0) return arr;
+            }
+          } catch(e) {}
+          return DEFAULT_AREAS.slice();
+        }
+
+        function saveMyAreas(arr) {
+          localStorage.setItem('myAreas', JSON.stringify(arr));
+        }
+
+        // Build filter buttons dynamically
+        var monitorBar = document.getElementById('monitor-bar');
+        var myAreasBtn = document.getElementById('my-areas-btn');
+        var currentArea = localStorage.getItem('selectedArea') || 'all';
+
+        function buildFilterButtons() {
+          // Remove old dynamic buttons (not "all" and not manage-btn)
+          monitorBar.querySelectorAll('.area-btn[data-area]:not([data-area="all"])').forEach(function(b) { b.remove(); });
+
+          var areas = getMyAreas();
+          var allBtn = monitorBar.querySelector('[data-area="all"]');
+          areas.forEach(function(area) {
+            var btn = document.createElement('button');
+            btn.className = 'area-btn';
+            btn.dataset.area = area;
+            btn.textContent = area;
+            if (area === currentArea) btn.classList.add('active');
+            btn.addEventListener('click', function() {
+              currentArea = area;
+              localStorage.setItem('selectedArea', area);
+              monitorBar.querySelectorAll('.area-btn').forEach(function(b) { b.classList.remove('active'); });
+              btn.classList.add('active');
+              // Custom (non-default) areas → trigger live search
+              if (DEFAULT_AREAS.indexOf(area) === -1) {
+                if (window.doCitySearch) { window.doCitySearch(area); }
+              } else {
+                filterCards(area);
+              }
+            });
+            // Insert before manage button
+            monitorBar.insertBefore(btn, myAreasBtn);
+          });
+
+          // all btn state
+          if (currentArea === 'all') allBtn.classList.add('active');
+          else allBtn.classList.remove('active');
+        }
+
+        // Filter the apartment cards in #root
+        function filterCards(area) {
+          var cards = document.querySelectorAll('#root [data-apt-area]');
+          if (!cards.length) {
+            // Fallback: reload with area stored
+            location.reload();
+            return;
+          }
+          cards.forEach(function(card) {
+            card.style.display = (area === 'all' || card.dataset.aptArea === area) ? '' : 'none';
+          });
+        }
+
+        // Wire "All" button
+        var allBtn = monitorBar.querySelector('[data-area="all"]');
+        allBtn.addEventListener('click', function() {
+          currentArea = 'all';
+          localStorage.setItem('selectedArea', 'all');
+          monitorBar.querySelectorAll('.area-btn').forEach(function(b) { b.classList.remove('active'); });
+          allBtn.classList.add('active');
+          filterCards('all');
+        });
+
+        buildFilterButtons();
+
+        // Fetch counts
+        function loadCounts() {
+          fetch('/api/apartments?area=all').then(function(r){ return r.json(); }).then(function(apts) {
+            var countMap = { all: apts.length };
+            apts.forEach(function(a) {
+              if (a.area) countMap[a.area] = (countMap[a.area] || 0) + 1;
+            });
+            monitorBar.querySelectorAll('.area-btn[data-area]').forEach(function(btn) {
+              if (btn === myAreasBtn) return;
+              var c = countMap[btn.dataset.area];
               if (c !== undefined) {
-                const span = document.createElement('span');
+                var span = document.createElement('span');
                 span.className = 'area-count';
                 span.textContent = c;
                 btn.appendChild(span);
               }
             });
-          } catch(e) {}
+          }).catch(function(){});
         }
         setTimeout(loadCounts, 1000);
-      })();
-    </script>
-    <script>
-      // Mark all as seen: button click only (no more auto-30s)
-      (function() {
-        function markAllSeen() {
-          fetch('/api/mark-all-seen', { method: 'POST' })
-            .then(() => {
-              const btn = document.getElementById('mark-seen-btn');
-              if (btn) { btn.textContent = '✅ تم'; btn.style.background = '#166534'; }
-              // Reload page so React gets fresh data with isNew=0
-              setTimeout(() => location.reload(), 600);
-            })
-            .catch(() => {});
-        }
-        
-        // Button click only
-        const btn = document.getElementById('mark-seen-btn');
-        if (btn) btn.addEventListener('click', markAllSeen);
-      })();
-    </script>
-    <script>
-      // Telegram settings panel logic
-      (function() {
-        const settingsBtn = document.getElementById('settings-btn');
-        const panel = document.getElementById('settings-panel');
-        const overlay = document.getElementById('settings-overlay');
-        const saveBtn = document.getElementById('save-tg-settings');
-        const status = document.getElementById('tg-status');
-        const boxes = {
-          Buxtehude: document.getElementById('tg-buxtehude'),
-          Neukloster: document.getElementById('tg-neukloster'),
-          'Neu Wulmstorf': document.getElementById('tg-neuwulmstorf')
-        };
 
-        function openPanel() {
-          panel.style.display = 'block';
-          overlay.style.display = 'block';
-          status.style.display = 'none';
-          // Load current settings
-          fetch('/api/settings/telegram-areas').then(r => r.json()).then(data => {
-            Object.keys(boxes).forEach(k => {
-              boxes[k].checked = data.areas.includes(k);
+        // ============ My Areas Modal ============
+        var overlay = document.getElementById('my-areas-overlay');
+        var panel   = document.getElementById('my-areas-panel');
+        var tagList = document.getElementById('areas-tag-list');
+        var newInput = document.getElementById('area-new-input');
+        var addBtn  = document.getElementById('area-add-btn');
+        var sugBox  = document.getElementById('area-suggestions');
+        var saveBtn = document.getElementById('areas-save-btn');
+        var cancelBtn = document.getElementById('areas-cancel-btn');
+        var closeBtn = document.getElementById('close-my-areas');
+
+        var draftAreas = [];
+
+        function openModal() {
+          draftAreas = getMyAreas().slice();
+          renderTags();
+          overlay.classList.add('active');
+          newInput.value = '';
+          sugBox.classList.remove('active');
+          applyI18n();
+        }
+        function closeModal() { overlay.classList.remove('active'); }
+
+        myAreasBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+
+        function renderTags() {
+          tagList.innerHTML = '';
+          draftAreas.forEach(function(area) {
+            var tag = document.createElement('span');
+            tag.className = 'area-tag';
+            tag.textContent = area;
+            var rm = document.createElement('button');
+            rm.className = 'area-tag-remove';
+            rm.textContent = '×';
+            rm.title = t('close');
+            rm.addEventListener('click', function() {
+              draftAreas = draftAreas.filter(function(a){ return a !== area; });
+              renderTags();
             });
-          }).catch(() => {});
-        }
-        function closePanel() {
-          panel.style.display = 'none';
-          overlay.style.display = 'none';
-        }
-
-        settingsBtn.addEventListener('click', openPanel);
-        overlay.addEventListener('click', closePanel);
-
-        saveBtn.addEventListener('click', () => {
-          const selected = Object.keys(boxes).filter(k => boxes[k].checked);
-          fetch('/api/settings/telegram-areas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ areas: selected })
-          }).then(r => r.json()).then(data => {
-            status.textContent = '✅ تم الحفظ! الإشعارات: ' + (data.areas.length ? data.areas.join(', ') : 'مغلقة');
-            status.style.display = 'block';
-            setTimeout(closePanel, 1500);
-          }).catch(() => {
-            status.textContent = '❌ فشل الحفظ';
-            status.style.display = 'block';
-            status.style.color = '#ef4444';
+            tag.appendChild(rm);
+            tagList.appendChild(tag);
           });
+          if (draftAreas.length === 0) {
+            var empty = document.createElement('span');
+            empty.style.cssText = 'color:var(--text-muted);font-size:13px;';
+            empty.setAttribute('data-i18n', 'myAreasEmpty');
+            empty.textContent = t('myAreasEmpty');
+            tagList.appendChild(empty);
+          }
+        }
+
+        function addAreaFromInput() {
+          var val = newInput.value.trim();
+          if (!val) return;
+          if (draftAreas.indexOf(val) !== -1) { newInput.value = ''; sugBox.classList.remove('active'); return; }
+          draftAreas.push(val);
+          renderTags();
+          newInput.value = '';
+          sugBox.classList.remove('active');
+        }
+
+        addBtn.addEventListener('click', addAreaFromInput);
+        newInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); addAreaFromInput(); }
+        });
+
+        // Autocomplete suggestions
+        newInput.addEventListener('input', function() {
+          var q = newInput.value.trim().toLowerCase();
+          sugBox.innerHTML = '';
+          if (q.length < 2) { sugBox.classList.remove('active'); return; }
+          var matches = CITIES_LIST.filter(function(c) {
+            return c.toLowerCase().indexOf(q) !== -1 && draftAreas.indexOf(c) === -1;
+          }).slice(0, 8);
+          if (!matches.length) { sugBox.classList.remove('active'); return; }
+          matches.forEach(function(city) {
+            var item = document.createElement('div');
+            item.className = 'area-sug-item';
+            item.textContent = city;
+            item.addEventListener('click', function() {
+              if (draftAreas.indexOf(city) === -1) draftAreas.push(city);
+              renderTags();
+              newInput.value = '';
+              sugBox.classList.remove('active');
+            });
+            sugBox.appendChild(item);
+          });
+          sugBox.classList.add('active');
+        });
+
+        document.addEventListener('click', function(e) {
+          if (!panel.contains(e.target)) sugBox.classList.remove('active');
+        });
+
+        saveBtn.addEventListener('click', function() {
+          var prevAreas = getMyAreas();
+          if (draftAreas.length === 0) {
+            localStorage.removeItem('myAreas');
+          } else {
+            saveMyAreas(draftAreas);
+          }
+          // If current selected area no longer exists, reset to all
+          var saved = getMyAreas();
+          if (currentArea !== 'all' && saved.indexOf(currentArea) === -1) {
+            localStorage.setItem('selectedArea', 'all');
+          }
+          closeModal();
+          buildFilterButtons();
+          loadCounts();
+
+          // Background search for newly added custom cities (to prime cache + hourly refresh)
+          draftAreas.forEach(function(area) {
+            if (DEFAULT_AREAS.indexOf(area) === -1 && prevAreas.indexOf(area) === -1) {
+              fetch('/api/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ city: area })
+              }).catch(function(){});
+            }
+          });
+
+          var lbl = saveBtn.textContent;
+          saveBtn.textContent = t('saved');
+          setTimeout(function() { saveBtn.textContent = lbl; }, 1200);
+        });
+
+      })();
+    </script>
+
+    <!-- ==================== Mark All Seen ==================== -->
+    <script>
+      (function() {
+        var btn = document.getElementById('mark-seen-btn');
+        if (btn) btn.addEventListener('click', function() {
+          fetch('/api/mark-all-seen', { method: 'POST' }).then(function() {
+            btn.textContent = '\u2705 ' + t('markSeen');
+            btn.style.background = '#166534';
+            setTimeout(function() { location.reload(); }, 600);
+          }).catch(function(){});
         });
       })();
     </script>
-    <script>
-      // User login system - save/restore favorites & contacted per email
-      (function() {
-        const btn = document.getElementById('login-btn');
-        const panel = document.getElementById('login-panel');
-        const overlay = document.getElementById('login-overlay');
-        const input = document.getElementById('login-email');
-        const submitBtn = document.getElementById('login-submit');
-        const logoutBtn = document.getElementById('logout-btn');
-        const status = document.getElementById('login-status');
 
-        // Load saved email
-        const savedEmail = localStorage.getItem('userEmail') || '';
+    <!-- ==================== Login System ==================== -->
+    <script>
+      (function() {
+        var btn = document.getElementById('login-btn');
+        var panel = document.getElementById('login-panel');
+        var overlay = document.getElementById('login-overlay');
+        var input = document.getElementById('login-email');
+        var submitBtn = document.getElementById('login-submit');
+        var logoutBtn = document.getElementById('logout-btn');
+        var status = document.getElementById('login-status');
+        var savedEmail = localStorage.getItem('userEmail') || '';
         if (input) input.value = savedEmail;
 
-        // Update button text if logged in
         function updateLoginBtn() {
-          const email = localStorage.getItem('userEmail');
+          var email = localStorage.getItem('userEmail');
           if (email) {
-            btn.textContent = '👤 ' + email.split('@')[0];
+            btn.textContent = '\ud83d\udc64 ' + email.split('@')[0];
             btn.style.background = '#065f46';
             btn.style.borderColor = '#059669';
             logoutBtn.style.display = 'block';
-            submitBtn.textContent = '🔄 استرجاع البيانات';
+            submitBtn.textContent = '\ud83d\udd04 ' + t('restore');
           } else {
-            btn.textContent = '🔑 تسجيل دخول';
+            btn.textContent = t('login');
             btn.style.background = '#1e3a5f';
             btn.style.borderColor = '#3b82f6';
             logoutBtn.style.display = 'none';
-            submitBtn.textContent = '🔑 دخول';
+            submitBtn.textContent = t('loginBtn');
           }
         }
         updateLoginBtn();
 
         function openPanel() {
-          panel.style.display = 'block';
-          overlay.style.display = 'block';
-          status.style.display = 'none';
+          panel.classList.add('active');
+          overlay.classList.add('active');
+          status.classList.remove('active');
         }
         function closePanel() {
-          panel.style.display = 'none';
-          overlay.style.display = 'none';
+          panel.classList.remove('active');
+          overlay.classList.remove('active');
         }
-
         btn.addEventListener('click', openPanel);
         overlay.addEventListener('click', closePanel);
 
-        submitBtn.addEventListener('click', async () => {
-          const email = input.value.trim();
+        submitBtn.addEventListener('click', function() {
+          var email = input.value.trim();
           if (!email || !email.includes('@')) {
-            status.textContent = '❌ أدخل إيميل صحيح';
+            status.textContent = '\u274c ' + t('invalidEmail');
             status.style.color = '#ef4444';
-            status.style.display = 'block';
+            status.classList.add('active');
             return;
           }
           submitBtn.disabled = true;
-          submitBtn.textContent = '⏳ جاري التحميل...';
-          try {
-            const res = await fetch('/api/user/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email })
-            });
-            const data = await res.json();
+          submitBtn.textContent = '\u23f3 ' + t('loading');
+          fetch('/api/user/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+          }).then(function(r){return r.json();}).then(function(data) {
             if (data.success) {
               localStorage.setItem('userEmail', email);
-              if (data.restored) {
-                status.textContent = '✅ تم استرجاع ' + data.favorites + ' مفضلة و ' + data.contacted + ' تواصل';
-              } else {
-                status.textContent = '✅ تم تسجيل الدخول - سيتم حفظ بياناتك تلقائياً';
-              }
+              status.textContent = data.restored
+                ? '\u2705 ' + t('restored') + ': ' + data.favorites + ' + ' + data.contacted
+                : '\u2705 ' + t('loggedIn');
               status.style.color = '#22c55e';
-              status.style.display = 'block';
+              status.classList.add('active');
               updateLoginBtn();
-              setTimeout(() => { closePanel(); location.reload(); }, 1500);
+              setTimeout(function() { closePanel(); location.reload(); }, 1500);
             } else {
-              status.textContent = data.error || '❌ فشل تسجيل الدخول';
+              status.textContent = data.error || '\u274c';
               status.style.color = '#ef4444';
-              status.style.display = 'block';
+              status.classList.add('active');
             }
-          } catch(e) {
-            status.textContent = '❌ خطأ في الاتصال';
+          }).catch(function() {
+            status.textContent = '\u274c';
             status.style.color = '#ef4444';
-            status.style.display = 'block';
-          }
-          submitBtn.disabled = false;
-          updateLoginBtn();
+            status.classList.add('active');
+          }).finally(function() {
+            submitBtn.disabled = false;
+            updateLoginBtn();
+          });
         });
 
-        logoutBtn.addEventListener('click', () => {
+        logoutBtn.addEventListener('click', function() {
           localStorage.removeItem('userEmail');
           input.value = '';
           updateLoginBtn();
-          status.textContent = '👋 تم تسجيل الخروج';
+          status.textContent = '\ud83d\udc4b ' + t('loggedOut');
           status.style.color = '#94a3b8';
-          status.style.display = 'block';
+          status.classList.add('active');
           setTimeout(closePanel, 1200);
         });
       })();
     </script>
-    <!-- Deleted apartments panel -->
-    <div id="deleted-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10002;"></div>
-    <div id="deleted-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10003;background:#1e293b;border:2px solid #ef4444;border-radius:16px;padding:24px;width:90%;max-width:700px;max-height:80vh;overflow-y:auto;font-family:'Tajawal',sans-serif;direction:rtl;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h3 style="color:#f8fafc;margin:0;font-size:18px;">🗑️ الشقق المحذوفة</h3>
-        <button id="close-deleted" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;">✕</button>
-      </div>
-      <div id="deleted-list" style="display:flex;flex-direction:column;gap:12px;"></div>
-      <p id="deleted-empty" style="color:#94a3b8;text-align:center;display:none;">لا توجد شقق محذوفة</p>
-    </div>
-    <script>
-      // Deleted apartments panel
-      (function() {
-        const btn = document.getElementById('deleted-btn');
-        const panel = document.getElementById('deleted-panel');
-        const overlay = document.getElementById('deleted-overlay');
-        const closeBtn = document.getElementById('close-deleted');
-        const listEl = document.getElementById('deleted-list');
-        const emptyEl = document.getElementById('deleted-empty');
-        const countEl = document.getElementById('deleted-count');
 
+    <!-- ==================== Deleted Apartments Panel ==================== -->
+    <script>
+      (function() {
+        var btn = document.getElementById('deleted-btn');
+        var panel = document.getElementById('deleted-panel');
+        var overlay = document.getElementById('deleted-overlay');
+        var closeBtn = document.getElementById('close-deleted');
+        var listEl = document.getElementById('deleted-list');
+        var emptyEl = document.getElementById('deleted-empty');
+        var countEl = document.getElementById('deleted-count');
+
+        function escH(str) {
+          if (!str) return '';
+          var d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+        }
         function formatDate(d) {
           if (!d) return '';
-          try { return new Date(d.replace(' ','T')+'Z').toLocaleDateString('ar-EG', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); } catch(e) { return d; }
+          try {
+            return new Date(d.replace(' ','T')+'Z').toLocaleDateString(getLang() === 'ar' ? 'ar-EG' : 'de-DE', {
+              day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+            });
+          } catch(e) { return d; }
         }
 
-        async function loadDeleted() {
-          try {
-            const res = await fetch('/api/apartments/deleted');
-            const apts = await res.json();
+        function loadDeleted() {
+          fetch('/api/apartments/deleted').then(function(r){return r.json();}).then(function(apts) {
             countEl.textContent = apts.length;
             listEl.innerHTML = '';
             if (apts.length === 0) { emptyEl.style.display = 'block'; return; }
             emptyEl.style.display = 'none';
-            apts.forEach(apt => {
-              const card = document.createElement('div');
-              card.style.cssText = 'background:#0f172a;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;gap:12px;align-items:flex-start;';
-              const imgHtml = apt.imageUrl ? `<img src="${apt.imageUrl}" style="width:80px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : '';
-              const reason = apt.deletedBy === 'user' ? '👤 حذفته أنت' : '🏢 حذفته المنصة';
-              const reasonColor = apt.deletedBy === 'user' ? '#f59e0b' : '#ef4444';
-              card.innerHTML = `
-                ${imgHtml}
-                <div style="flex:1;min-width:0;">
-                  <div style="color:#f8fafc;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${apt.title}</div>
-                  <div style="color:#94a3b8;font-size:12px;margin-top:2px;">💰 ${apt.price || 0}€${apt.priceType ? ' '+apt.priceType : ''} | 📍 ${apt.address || apt.area} | 📌 ${apt.source}</div>
-                  <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
-                    <span style="color:${reasonColor};font-size:12px;font-weight:600;">${reason}</span>
-                    <span style="color:#64748b;font-size:11px;">${formatDate(apt.deletedAt)}</span>
-                  </div>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-                  <button onclick="restoreApt(${apt.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #22c55e;background:transparent;color:#22c55e;cursor:pointer;font-size:12px;font-family:'Tajawal';">↩️ استرجاع</button>
-                  <button onclick="permDeleteApt(${apt.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;font-size:12px;font-family:'Tajawal';">❌ حذف نهائي</button>
-                  ${apt.url ? `<a href="${apt.url}" target="_blank" style="padding:4px 10px;border-radius:6px;border:1px solid #3b82f6;color:#3b82f6;text-decoration:none;font-size:12px;text-align:center;font-family:'Tajawal';">🔗 عرض</a>` : ''}
-                </div>
-              `;
+            apts.forEach(function(apt) {
+              var reason = apt.deletedBy === 'user' ? t('byUser') : t('byPlatform');
+              var reasonColor = apt.deletedBy === 'user' ? '#f59e0b' : '#ef4444';
+              var card = document.createElement('div');
+              card.className = 'deleted-card';
+              card.innerHTML =
+                (apt.imageUrl ? '<img src="'+escH(apt.imageUrl)+'" onerror="this.style.display=\'none\'">' : '') +
+                '<div class="deleted-card-info">' +
+                  '<div class="deleted-card-title">'+escH(apt.title)+'</div>' +
+                  '<div class="deleted-card-meta">\ud83d\udcb0 '+(apt.price||0)+'\u20ac'+(apt.priceType?' '+apt.priceType:'') +
+                    ' | \ud83d\udccd '+escH(apt.address||apt.area)+' | \ud83d\udccc '+escH(apt.source)+'</div>' +
+                  '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;">' +
+                    '<span style="color:'+reasonColor+';font-size:12px;font-weight:600;">'+reason+'</span>' +
+                    '<span style="color:var(--text-muted);font-size:11px;">'+formatDate(apt.deletedAt)+'</span>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="deleted-card-actions">' +
+                  '<button onclick="restoreApt('+apt.id+')" style="color:#22c55e;border-color:#22c55e;">'+t('restore')+'</button>' +
+                  '<button onclick="permDeleteApt('+apt.id+')" style="color:#ef4444;border-color:#ef4444;">'+t('permDelete')+'</button>' +
+                  (apt.url ? '<a href="'+escH(apt.url)+'" target="_blank" style="color:#3b82f6;border-color:#3b82f6;">\ud83d\udd17 '+t('view')+'</a>' : '') +
+                '</div>';
               listEl.appendChild(card);
             });
-          } catch(e) { console.error(e); }
+          }).catch(function(e) { console.error(e); });
         }
 
-        window.restoreApt = async function(id) {
-          await fetch(`/api/apartments/${id}/restore`, { method: 'POST' });
-          loadDeleted();
+        window.restoreApt = function(id) {
+          fetch('/api/apartments/'+id+'/restore', { method: 'POST' }).then(function() { loadDeleted(); });
         };
-        window.permDeleteApt = async function(id) {
-          if (!confirm('حذف نهائي - لا يمكن التراجع؟')) return;
-          await fetch(`/api/apartments/${id}/permanent`, { method: 'DELETE' });
-          loadDeleted();
+        window.permDeleteApt = function(id) {
+          if (!confirm(t('confirmPermDelete'))) return;
+          fetch('/api/apartments/'+id+'/permanent', { method: 'DELETE' }).then(function() { loadDeleted(); });
         };
 
-        btn.addEventListener('click', () => {
-          panel.style.display = 'block';
-          overlay.style.display = 'block';
+        btn.addEventListener('click', function() {
+          panel.classList.add('active');
+          overlay.classList.add('active');
           loadDeleted();
         });
-        closeBtn.addEventListener('click', () => { panel.style.display = 'none'; overlay.style.display = 'none'; });
-        overlay.addEventListener('click', () => { panel.style.display = 'none'; overlay.style.display = 'none'; });
+        closeBtn.addEventListener('click', function() { panel.classList.remove('active'); overlay.classList.remove('active'); });
+        overlay.addEventListener('click', function() { panel.classList.remove('active'); overlay.classList.remove('active'); });
 
         // Load count on page load
-        setTimeout(async () => {
-          try {
-            const res = await fetch('/api/apartments/deleted');
-            const apts = await res.json();
+        setTimeout(function() {
+          fetch('/api/apartments/deleted').then(function(r){return r.json();}).then(function(apts) {
             countEl.textContent = apts.length;
-          } catch(e) {}
+          }).catch(function(){});
         }, 2000);
       })();
     </script>
-    <script>
-      // Apartment detail modal - click card to show popup with all info
-      (function() {
-        const overlay = document.getElementById('apt-detail-overlay');
-        const modal = document.getElementById('apt-detail-modal');
-        let aptCache = [];
 
-        const sourceColors = {
+    <!-- ==================== Apartment Detail Modal ==================== -->
+    <script>
+      (function() {
+        var overlay = document.getElementById('apt-detail-overlay');
+        var modal = document.getElementById('apt-detail-modal');
+        var aptCache = [];
+        var searchResultsCache = [];
+
+        var sourceColors = {
           Kleinanzeigen: 'background:#0d948822;color:#2dd4bf;border-color:#0d948833',
           Immowelt: 'background:#7c3aed22;color:#a78bfa;border-color:#7c3aed33',
           ImmoScout24: 'background:#ea580c22;color:#fb923c;border-color:#ea580c33',
@@ -784,104 +1934,171 @@
           'Wohnungsb\u00f6rse': 'background:#4f46e522;color:#818cf8;border-color:#4f46e533',
         };
 
-        function escapeHtml(str) {
+        function escH(str) {
           if (!str) return '';
-          const d = document.createElement('div');
-          d.textContent = str;
-          return d.innerHTML;
+          var d = document.createElement('div'); d.textContent = str; return d.innerHTML;
         }
-
         function formatDate(d) {
           if (!d) return '';
           try {
-            const dt = d.length === 10
+            var dt = d.length === 10
               ? new Date(d.split('-')[0], d.split('-')[1]-1, d.split('-')[2])
               : new Date(d.replace(' ','T')+'Z');
-            const months = ['\u064a\u0646\u0627\u064a\u0631','\u0641\u0628\u0631\u0627\u064a\u0631','\u0645\u0627\u0631\u0633','\u0623\u0628\u0631\u064a\u0644','\u0645\u0627\u064a\u0648','\u064a\u0648\u0646\u064a\u0648','\u064a\u0648\u0644\u064a\u0648','\u0623\u063a\u0633\u0637\u0633','\u0633\u0628\u062a\u0645\u0628\u0631','\u0623\u0643\u062a\u0648\u0628\u0631','\u0646\u0648\u0641\u0645\u0628\u0631','\u062f\u064a\u0633\u0645\u0628\u0631'];
-            return dt.getDate() + ' ' + months[dt.getMonth()];
+            var locale = getLang() === 'ar' ? 'ar-EG' : 'de-DE';
+            return dt.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
           } catch(e) { return d; }
         }
 
         function openDetail(apt) {
-          const sc = sourceColors[apt.source] || 'background:#1e293b;color:#94a3b8;border-color:#334155';
-          const features = [
-            { key: 'noCommission', label: '\u0628\u062f\u0648\u0646 \u0639\u0645\u0648\u0644\u0629', icon: '\u2714\ufe0f' },
-            { key: 'furnished', label: '\u0645\u0641\u0631\u0648\u0634\u0629', icon: '\u{1f6cb}\ufe0f' },
-            { key: 'hasBalcony', label: '\u0628\u0644\u0643\u0648\u0646', icon: '\u{1f334}' },
-            { key: 'hasGarden', label: '\u062d\u062f\u064a\u0642\u0629', icon: '\u{1f333}' },
-            { key: 'hasParking', label: '\u0645\u0648\u0642\u0641 \u0633\u064a\u0627\u0631\u0629', icon: '\u{1f697}' },
-          ];
-
-          // Parse images array
-          let images = [];
+          var sc = sourceColors[apt.source] || 'background:var(--bg-surface);color:var(--text-secondary);border-color:var(--border-color)';
+          var images = [];
           try { images = JSON.parse(apt.imageUrls || '[]'); } catch(e) {}
           if (!images.length && apt.imageUrl) images = [apt.imageUrl];
-
-          let imgHtml;
-          if (images.length > 0) {
-            const btns = images.length > 1
-              ? `<button class="adm-gallery-btn adm-gallery-prev" onclick="admGallery(-1)">&#8250;</button>
-                 <button class="adm-gallery-btn adm-gallery-next" onclick="admGallery(1)">&#8249;</button>
-                 <div class="adm-gallery-counter"><span id="adm-img-idx">1</span> / ${images.length}</div>`
-              : '';
-            imgHtml = `<div class="adm-gallery" id="adm-gallery" data-idx="0">
-              <img id="adm-gallery-img" src="${escapeHtml(images[0])}" onclick="openLightbox()" onerror="this.style.display='none'">
-              ${btns}
-            </div>`;
-          } else {
-            imgHtml = '<div class="adm-no-img">\u{1f3e0}</div>';
-          }
-
-          // Store images on window for gallery navigation
           window._admImages = images;
 
-          const featHtml = features.map(f =>
-            `<span class="adm-feat ${apt[f.key] ? 'adm-feat-yes' : 'adm-feat-no'}">${f.icon} ${f.label}</span>`
-          ).join('');
+          // --- Gallery / hero image ---
+          var galleryHtml;
+          if (images.length > 0) {
+            var navBtns = images.length > 1
+              ? '<button class="adm-gallery-btn adm-gallery-prev" onclick="admGallery(-1)">&#8249;</button>' +
+                '<button class="adm-gallery-btn adm-gallery-next" onclick="admGallery(1)">&#8250;</button>' +
+                '<div class="adm-gallery-counter">\ud83d\uddbc\ufe0f <span id="adm-img-idx">1</span>\u2009/\u2009'+images.length+'</div>'
+              : '';
+            var viewAllPill = images.length > 1
+              ? '<div class="adm-img-count-pill" onclick="openLightbox()">\ud83d\uddbc\ufe0f Alle '+images.length+' Bilder ansehen</div>'
+              : '';
+            galleryHtml = '<div class="adm-gallery" id="adm-gallery" data-idx="0">' +
+              '<img id="adm-gallery-img" src="'+escH(images[0])+'" onclick="openLightbox()" onerror="this.style.display=\'none\'">' +
+              navBtns + viewAllPill +
+              '<button class="adm-close" onclick="closeAptDetail()">\u2715</button>' +
+            '</div>';
+          } else {
+            galleryHtml = '<div style="position:relative;">' +
+              '<div class="adm-no-img">\ud83c\udfe0</div>' +
+              '<button class="adm-close" onclick="closeAptDetail()">\u2715</button>' +
+            '</div>';
+          }
 
-          const notesHtml = apt.notes
-            ? `<div class="adm-notes">${escapeHtml(apt.notes)}</div>`
+          // --- Type label from title ---
+          var typeLabel = 'Wohnung zur Miete';
+          if (apt.title) {
+            var firstPart = apt.title.split('|')[0].split('-')[0].split(',')[0].trim();
+            if (firstPart.length > 3 && firstPart.length < 50) typeLabel = firstPart;
+          }
+
+          // --- Price block ---
+          var priceLabel = apt.priceType || 'Kaltmiete';
+          var priceHtml = '<div class="adm-price-row">' +
+            '<span class="adm-price-main">'+(apt.price ? apt.price.toLocaleString('de-DE')+'\u2009\u20ac' : '\u2014')+'</span>' +
+            '<span class="adm-price-label">'+escH(priceLabel)+'</span>' +
+          '</div>';
+
+          // --- Details row ---
+          var detailParts = [];
+          if (apt.rooms) detailParts.push('<span>'+apt.rooms+' Zimmer</span>');
+          if (apt.size)  detailParts.push('<span>'+apt.size+'\u2009m\u00b2</span>');
+          var catMap = { budget: 'G\u00fcnstig', medium: 'Mittelklasse', premium: 'Premium' };
+          if (apt.category) detailParts.push('<span>'+escH(catMap[apt.category]||apt.category)+'</span>');
+          var detailsHtml = detailParts.length
+            ? '<div class="adm-details-row">'+detailParts.join('<span class="adm-detail-sep">\u2022</span>')+'</div>'
             : '';
 
-          modal.innerHTML = `
-            <div style="position:relative;">
-              ${imgHtml}
-              <button class="adm-close" onclick="closeAptDetail()">\u2715</button>
-            </div>
-            <div class="adm-body">
-              <span class="adm-source" style="${sc}">${escapeHtml(apt.source)}</span>
-              <h2 class="adm-title">${escapeHtml(apt.title)}</h2>
-              <div class="adm-address">\u{1f4cd} ${escapeHtml(apt.address || apt.area)}</div>
-              <div class="adm-stats">
-                <div class="adm-stat">
-                  <div class="adm-stat-val price">${apt.price || 0}\u20ac${apt.priceType ? ' <span style="font-size:11px;font-weight:400;color:#94a3b8">'+apt.priceType+'</span>' : ''}</div>
-                  <div class="adm-stat-label">\u0627\u0644\u0625\u064a\u062c\u0627\u0631 \u0627\u0644\u0634\u0647\u0631\u064a</div>
-                </div>
-                <div class="adm-stat">
-                  <div class="adm-stat-val">${apt.rooms || '\u2014'}</div>
-                  <div class="adm-stat-label">\u063a\u0631\u0641\u0629</div>
-                </div>
-                <div class="adm-stat">
-                  <div class="adm-stat-val">${apt.size ? apt.size + ' \u0645\u00b2' : '\u2014'}</div>
-                  <div class="adm-stat-label">\u0627\u0644\u0645\u0633\u0627\u062d\u0629</div>
-                </div>
-              </div>
-              <div class="adm-features">${featHtml}</div>
-              ${notesHtml}
-              <div class="adm-meta">
-                <span>\u{1f4c5} \u0623\u0636\u064a\u0641: ${formatDate(apt.addedAt)}</span>
-                ${apt.publishedAt ? '<span>\u{1f4cc} \u0646\u0634\u0631: ' + formatDate(apt.publishedAt) + '</span>' : ''}
-                <span>\u{1f4cd} ${escapeHtml(apt.area)}</span>
-                <span>\u{1f3f7}\ufe0f ${escapeHtml(apt.category)}</span>
-              </div>
-              <div class="adm-actions">
-                ${apt.url ? `<a href="${escapeHtml(apt.url)}" target="_blank" rel="noreferrer" class="adm-btn-primary">\u{1f310} \u0639\u0631\u0636 \u0639\u0644\u0649 ${escapeHtml(apt.source)}</a>` : ''}
-                <button class="adm-btn-secondary" onclick="closeAptDetail()">\u2716 \u0625\u063a\u0644\u0627\u0642</button>
-              </div>
-            </div>
-          `;
+          // --- Address ---
+          var addrHtml = '<div class="adm-address">' +
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
+            escH(apt.address || apt.area || '') +
+          '</div>';
+
+          // --- Merkmale (Features) ---
+          var allFeats = [
+            { key: 'noCommission', icon: '\u2705', label: t('noCommission') },
+            { key: 'furnished',    icon: '\ud83d\udecb\ufe0f', label: t('furnished') },
+            { key: 'hasBalcony',   icon: '\ud83c\udf04', label: t('hasBalcony') },
+            { key: 'hasGarden',    icon: '\ud83c\udf33', label: t('hasGarden') },
+            { key: 'hasParking',   icon: '\ud83d\ude97', label: t('hasParking') },
+          ];
+          var activeFeats = allFeats.filter(function(f){ return apt[f.key]; });
+          var inactiveFeats = allFeats.filter(function(f){ return !apt[f.key]; });
+          var featItemsHtml = activeFeats.concat(inactiveFeats).map(function(f) {
+            return '<div class="adm-feat-item'+(apt[f.key]?'':' inactive')+'">' +
+              '<span class="adm-feat-icon">'+f.icon+'</span>' +
+              '<span>'+f.label+'</span>' +
+            '</div>';
+          }).join('');
+          var merkHtml = '<div class="adm-section">' +
+            '<div class="adm-section-title">Merkmale</div>' +
+            '<div class="adm-features-grid">'+featItemsHtml+'</div>' +
+          '</div>';
+
+          // --- Mietkosten ---
+          var kostenHtml = '';
+          if (apt.price) {
+            var pMain = apt.price.toLocaleString('de-DE');
+            kostenHtml = '<div class="adm-section">' +
+              '<div class="adm-section-title">Mietkosten</div>' +
+              '<div class="adm-cost-block">' +
+                '<div class="adm-cost-main">'+pMain+'\u2009\u20ac</div>' +
+                '<div class="adm-cost-bar"><div class="adm-cost-bar-fill" style="width:75%"></div></div>' +
+                '<div class="adm-cost-row">' +
+                  '<div class="adm-cost-label"><span class="adm-cost-dot" style="background:#3b82f6"></span>'+escH(priceLabel)+'</div>' +
+                  '<div class="adm-cost-val">'+pMain+'\u2009\u20ac</div>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+          }
+
+          // --- Notes ---
+          var notesHtml = apt.notes
+            ? '<div class="adm-section"><div class="adm-section-title">Notizen</div><div class="adm-notes">'+escH(apt.notes)+'</div></div>'
+            : '';
+
+          // --- Sidebar ---
+          var visitBtn = apt.url
+            ? '<a href="'+escH(apt.url)+'" target="_blank" rel="noreferrer" class="adm-btn-visit">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zm-9.3-7.7l7.3-7.3H13V2h9v9h-2V7l-7.3 7.3-1.7-1z"/></svg>' +
+              'Auf '+escH(apt.source)+' ansehen</a>'
+            : '';
+          var sidebarHtml = '<div class="adm-sidebar">' +
+            '<div class="adm-source-card">' +
+              '<div class="adm-source-name">'+escH(apt.source)+'</div>' +
+              '<span class="adm-source-badge" style="'+sc+'">Inserat</span>' +
+            '</div>' +
+            visitBtn +
+            '<button class="adm-btn-close-sb" onclick="closeAptDetail()">\u2715 Schlie\u00dfen</button>' +
+            '<div class="adm-divider"></div>' +
+            '<div class="adm-meta-row">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;margin-top:1px;color:var(--text-muted)"><path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 00-2 2v16a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm0 18H5V8h14v13zm-7-11a5 5 0 100 10 5 5 0 000-10z"/></svg>' +
+              '<span>'+t('added')+': <strong>'+formatDate(apt.addedAt)+'</strong></span>' +
+            '</div>' +
+            (apt.publishedAt ? '<div class="adm-meta-row">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;margin-top:1px;color:var(--text-muted)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>' +
+              '<span>'+t('published')+': <strong>'+formatDate(apt.publishedAt)+'</strong></span>' +
+            '</div>' : '') +
+            '<div class="adm-meta-row">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;margin-top:1px;color:var(--text-muted)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
+              '<span>'+escH(apt.area||'')+'</span>' +
+            '</div>' +
+          '</div>';
+
+          // --- Assemble modal ---
+          modal.innerHTML = galleryHtml +
+            '<div class="adm-layout">' +
+              '<div class="adm-main">' +
+                '<div class="adm-type-label">'+escH(typeLabel)+'</div>' +
+                '<h2 class="adm-title">'+escH(apt.title)+'</h2>' +
+                priceHtml +
+                detailsHtml +
+                addrHtml +
+                merkHtml +
+                kostenHtml +
+                notesHtml +
+              '</div>' +
+              sidebarHtml +
+            '</div>';
+
           overlay.classList.add('active');
           modal.classList.add('active');
+          modal.scrollTop = 0;
         }
 
         window.closeAptDetail = function() {
@@ -892,25 +2109,24 @@
         };
 
         window.admGallery = function(dir) {
-          const imgs = window._admImages || [];
+          var imgs = window._admImages || [];
           if (imgs.length <= 1) return;
-          const gallery = document.getElementById('adm-gallery');
-          let idx = parseInt(gallery.dataset.idx || '0') + dir;
+          var gallery = document.getElementById('adm-gallery');
+          var idx = parseInt(gallery.dataset.idx || '0') + dir;
           if (idx < 0) idx = imgs.length - 1;
           if (idx >= imgs.length) idx = 0;
           gallery.dataset.idx = idx;
           document.getElementById('adm-gallery-img').src = imgs[idx];
-          const counter = document.getElementById('adm-img-idx');
+          var counter = document.getElementById('adm-img-idx');
           if (counter) counter.textContent = idx + 1;
         };
 
-        // Fullscreen lightbox
         window.openLightbox = function() {
-          const imgs = window._admImages || [];
+          var imgs = window._admImages || [];
           if (!imgs.length) return;
-          const gallery = document.getElementById('adm-gallery');
-          const idx = parseInt(gallery?.dataset.idx || '0');
-          const lb = document.getElementById('img-lightbox');
+          var gallery = document.getElementById('adm-gallery');
+          var idx = parseInt(gallery ? gallery.dataset.idx : '0');
+          var lb = document.getElementById('img-lightbox');
           document.getElementById('lb-img').src = imgs[idx];
           document.getElementById('lb-idx').textContent = idx + 1;
           document.getElementById('lb-total').textContent = imgs.length;
@@ -921,126 +2137,429 @@
           document.getElementById('img-lightbox').classList.remove('active');
         };
         window.lbNav = function(dir) {
-          const imgs = window._admImages || [];
+          var imgs = window._admImages || [];
           if (imgs.length <= 1) return;
-          const lb = document.getElementById('img-lightbox');
-          let idx = parseInt(lb.dataset.idx || '0') + dir;
+          var lb = document.getElementById('img-lightbox');
+          var idx = parseInt(lb.dataset.idx || '0') + dir;
           if (idx < 0) idx = imgs.length - 1;
           if (idx >= imgs.length) idx = 0;
           lb.dataset.idx = idx;
           document.getElementById('lb-img').src = imgs[idx];
           document.getElementById('lb-idx').textContent = idx + 1;
-          // Also sync the gallery behind
-          const gallery = document.getElementById('adm-gallery');
+          var gallery = document.getElementById('adm-gallery');
           if (gallery) {
             gallery.dataset.idx = idx;
             document.getElementById('adm-gallery-img').src = imgs[idx];
-            const counter = document.getElementById('adm-img-idx');
+            var counter = document.getElementById('adm-img-idx');
             if (counter) counter.textContent = idx + 1;
           }
         };
         document.getElementById('img-lightbox').addEventListener('click', function(e) {
           if (e.target === this) window.closeLightbox();
         });
-
         overlay.addEventListener('click', window.closeAptDetail);
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'Escape') window.closeAptDetail();
-        });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') window.closeAptDetail(); });
 
-        // Fetch apartment data for the modal
-        async function loadAptCache() {
-          try {
-            const res = await fetch('/api/apartments');
-            aptCache = await res.json();
-          } catch(e) {}
+        // Cache apartments from API for detail modal
+        function loadAptCache() {
+          fetch('/api/apartments').then(function(r){return r.json();}).then(function(data) { aptCache = data; }).catch(function(){});
         }
         loadAptCache();
         setInterval(loadAptCache, 30000);
 
-        // Attach click to cards
+        // Attach click to React cards
         function addCardClick() {
-          document.querySelectorAll('[data-testid^="card-apartment-"]').forEach(card => {
+          document.querySelectorAll('[data-testid^="card-apartment-"]').forEach(function(card) {
             if (card.dataset.cardClickBound) return;
             card.dataset.cardClickBound = '1';
             card.addEventListener('click', function(e) {
               if (e.target.closest('button, a, input, select, textarea')) return;
-              const testId = card.getAttribute('data-testid');
-              const id = testId ? parseInt(testId.replace('card-apartment-', '')) : null;
+              var testId = card.getAttribute('data-testid');
+              var id = testId ? parseInt(testId.replace('card-apartment-', '')) : null;
               if (!id) return;
-              const apt = aptCache.find(a => a.id === id);
+              var apt = aptCache.find(function(a) { return a.id === id; });
               if (apt) openDetail(apt);
             });
           });
         }
-        const observer = new MutationObserver(() => setTimeout(addCardClick, 150));
-        setTimeout(() => {
-          const root = document.getElementById('root');
+        var observer = new MutationObserver(function() { setTimeout(addCardClick, 150); });
+        setTimeout(function() {
+          var root = document.getElementById('root');
           if (root) observer.observe(root, { childList: true, subtree: true });
           addCardClick();
         }, 2000);
+
+        // Expose openDetail for search results cards
+        window.openAptDetail = openDetail;
       })();
     </script>
-  <script data-pplx-inline-edit>
-(function(){
-  if(window===window.top)return;
-  function inlineAll(orig,clone){
-    if(orig.nodeType!==1)return;
-    try{
-      var cs=getComputedStyle(orig);
-      var t='';
-      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
-      clone.style.cssText=t;
-    }catch(e){}
-    var oc=orig.children,cc=clone.children;
-    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
-  }
-  function stripExternal(clone){
-    var imgs=clone.querySelectorAll('img');
-    for(var i=0;i<imgs.length;i++){
-      var s=imgs[i].getAttribute('src');
-      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
-    }
-    var all=clone.querySelectorAll('*');
-    for(var i=0;i<all.length;i++){
-      var st=all[i].style.cssText;
-      if(st&&st.indexOf('url(')>=0){
-        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
-      }
-    }
-  }
-  window.addEventListener('message',function(e){
-    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
-    var scrollX=window.scrollX||window.pageXOffset||0;
-    var scrollY=window.scrollY||window.pageYOffset||0;
-    var w=window.innerWidth,h=window.innerHeight;
-    try{
-      var clone=document.documentElement.cloneNode(true);
-      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
-      for(var i=0;i<rm.length;i++){rm[i].remove();}
-      inlineAll(document.documentElement,clone);
-      stripExternal(clone);
-      var html=new XMLSerializer().serializeToString(clone);
-      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
-        +'<foreignObject width="100%" height="100%">'
-        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
-        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
-        +html+'</div></div></foreignObject></svg>';
-      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-      var img=new Image();
-      img.onload=function(){
-        var c=document.createElement('canvas');c.width=w;c.height=h;
-        c.getContext('2d').drawImage(img,0,0);
-        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
-      };
-      img.onerror=function(){
-        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
-      };
-      img.src=svgUrl;
-    }catch(err){
-      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
-    }
-  });
-})();
-</script></body>
+
+    <!-- ==================== City Search & Results ==================== -->
+    <script>
+      (function() {
+        var GERMAN_CITIES = [
+          "Berlin","Hamburg","M\u00fcnchen","K\u00f6ln","Frankfurt am Main","Stuttgart",
+          "D\u00fcsseldorf","Leipzig","Dortmund","Essen","Bremen","Dresden",
+          "Hannover","N\u00fcrnberg","Duisburg","Bochum","Wuppertal","Bielefeld",
+          "Bonn","M\u00fcnster","Mannheim","Karlsruhe","Augsburg","Wiesbaden",
+          "M\u00f6nchengladbach","Gelsenkirchen","Aachen","Braunschweig","Kiel",
+          "Chemnitz","Halle","Magdeburg","Freiburg","Krefeld","Mainz",
+          "L\u00fcbeck","Erfurt","Oberhausen","Rostock","Kassel","Hagen",
+          "Potsdam","Saarbr\u00fccken","Hamm","Ludwigshafen","Oldenburg",
+          "Osnabr\u00fcck","Leverkusen","Heidelberg","Darmstadt","Solingen",
+          "Regensburg","Herne","Paderborn","Neuss","Ingolstadt",
+          "Offenbach","W\u00fcrzburg","F\u00fcrth","Ulm","Heilbronn","Pforzheim",
+          "Wolfsburg","G\u00f6ttingen","Bottrop","Reutlingen","Koblenz",
+          "Bremerhaven","Remscheid","Bergisch Gladbach","Trier","Jena",
+          "Erlangen","Moers","Siegen","Hildesheim","Salzgitter",
+          "Cottbus","Kaiserslautern","Schwerin","G\u00fctersloh","Witten",
+          "Gera","Iserlohn","D\u00fcren","Esslingen","Ludwigsburg",
+          "T\u00fcbingen","Konstanz","Marburg","Gie\u00dfen","Hanau",
+          "Buxtehude","Stade","Neu Wulmstorf","Neukloster","Harburg",
+          "L\u00fcneburg","Cuxhaven","Celle","Uelzen","Rotenburg",
+          "Bamberg","Bayreuth","Passau","Landshut","Rosenheim",
+          "Friedrichshafen","Ravensburg","G\u00f6ppingen","Aalen","Heidenheim"
+        ];
+        var MONITORED = ['Buxtehude', 'Neukloster', 'Neu Wulmstorf'];
+
+        var cityInput = document.getElementById('city-input');
+        var searchBtn = document.getElementById('city-search-btn');
+        var dropdown = document.getElementById('city-dropdown');
+        var searchResults = document.getElementById('search-results');
+        var searchLoading = document.getElementById('search-loading');
+        var monitorBar = document.getElementById('monitor-bar');
+        var rootEl = document.getElementById('root');
+        var searchBack = document.getElementById('search-back');
+        var searchTitle = document.getElementById('search-title');
+        var searchCount = document.getElementById('search-count');
+        var searchCards = document.getElementById('search-cards');
+        var searchSourceFilter = document.getElementById('search-source-filter');
+
+        var currentSearchData = [];
+        var activeSourceFilter = 'all';
+
+        var sourceColors = {
+          'Kleinanzeigen': { bg: '#0d948822', color: '#2dd4bf', border: '#0d948833' },
+          'Immowelt': { bg: '#7c3aed22', color: '#a78bfa', border: '#7c3aed33' },
+          'markt.de': { bg: '#e1195822', color: '#fb7185', border: '#e1195833' },
+          'Wohnungsb\u00f6rse': { bg: '#4f46e522', color: '#818cf8', border: '#4f46e533' },
+        };
+
+        function escH(str) {
+          if (!str) return '';
+          var d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+        }
+
+        // City autocomplete dropdown
+        cityInput.addEventListener('input', function() {
+          var val = cityInput.value.trim().toLowerCase();
+          if (val.length < 1) { dropdown.classList.remove('active'); return; }
+          var matches = GERMAN_CITIES.filter(function(c) {
+            return c.toLowerCase().includes(val);
+          }).slice(0, 12);
+          if (matches.length === 0) { dropdown.classList.remove('active'); return; }
+          dropdown.innerHTML = matches.map(function(city) {
+            var isMonitored = MONITORED.includes(city);
+            return '<div class="city-dropdown-item" data-city="'+escH(city)+'">'+escH(city)+
+              (isMonitored ? '<span class="monitored-badge">\ud83d\udce1 Monitor</span>' : '') +
+              '</div>';
+          }).join('');
+          dropdown.classList.add('active');
+        });
+
+        dropdown.addEventListener('click', function(e) {
+          var item = e.target.closest('.city-dropdown-item');
+          if (!item) return;
+          var city = item.dataset.city;
+          cityInput.value = city;
+          dropdown.classList.remove('active');
+          triggerSearch(city);
+        });
+
+        cityInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            dropdown.classList.remove('active');
+            var val = cityInput.value.trim();
+            if (val.length >= 2) triggerSearch(val);
+          }
+        });
+
+        searchBtn.addEventListener('click', function() {
+          dropdown.classList.remove('active');
+          var val = cityInput.value.trim();
+          if (val.length >= 2) triggerSearch(val);
+        });
+
+        document.addEventListener('click', function(e) {
+          if (!e.target.closest('.city-search-wrapper')) {
+            dropdown.classList.remove('active');
+          }
+        });
+
+        function triggerSearch(cityName) {
+          // If monitored city, switch to monitor view
+          if (MONITORED.includes(cityName)) {
+            localStorage.setItem('selectedArea', cityName);
+            location.reload();
+            return;
+          }
+          doLiveSearch(cityName);
+        }
+
+        // Expose globally so area filter can trigger search for custom areas
+        window.doCitySearch = triggerSearch;
+
+        function doLiveSearch(cityName) {
+          // Show loading
+          searchLoading.classList.add('active');
+          searchBtn.disabled = true;
+
+          fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city: cityName })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            searchLoading.classList.remove('active');
+            searchBtn.disabled = false;
+            if (data.error) {
+              alert(data.error);
+              return;
+            }
+            currentSearchData = data.apartments || [];
+            showSearchResults(cityName, !!data.fromCache);
+          })
+          .catch(function(err) {
+            searchLoading.classList.remove('active');
+            searchBtn.disabled = false;
+            alert('Search failed: ' + err.message);
+          });
+        }
+
+        function showSearchResults(cityName, fromCache) {
+          // Hide monitor view, show search results
+          monitorBar.style.display = 'none';
+          rootEl.style.display = 'none';
+          searchResults.classList.add('active');
+
+          searchTitle.textContent = cityName + ' \u2014 ' + currentSearchData.length + ' ' + t('listings');
+          searchCount.innerHTML = t('results') + (fromCache ? ' <span style="font-size:11px;background:var(--badge-bg,#0d948822);color:var(--badge-color,#2dd4bf);border:1px solid var(--badge-border,#0d948833);padding:2px 7px;border-radius:20px;font-weight:600;vertical-align:middle;">⚡ cached</span>' : '');
+          activeSourceFilter = 'all';
+
+          renderSourceFilter();
+          renderCards();
+        }
+
+        function renderSourceFilter() {
+          var sources = {};
+          currentSearchData.forEach(function(apt) {
+            sources[apt.source] = (sources[apt.source] || 0) + 1;
+          });
+
+          var html = '<button class="search-source-btn'+(activeSourceFilter==='all'?' active':'')+'" data-source="all">'+t('all')+' ('+currentSearchData.length+')</button>';
+          Object.keys(sources).forEach(function(src) {
+            html += '<button class="search-source-btn'+(activeSourceFilter===src?' active':'')+'" data-source="'+escH(src)+'">'+escH(src)+' ('+sources[src]+')</button>';
+          });
+          searchSourceFilter.innerHTML = html;
+
+          searchSourceFilter.querySelectorAll('.search-source-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              activeSourceFilter = btn.dataset.source;
+              renderSourceFilter();
+              renderCards();
+            });
+          });
+        }
+
+        function renderCards() {
+          var filtered = activeSourceFilter === 'all'
+            ? currentSearchData
+            : currentSearchData.filter(function(a) { return a.source === activeSourceFilter; });
+
+          if (filtered.length === 0) {
+            searchCards.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-secondary);font-size:18px;">\ud83c\udfe0 '+t('noResults')+'</div>';
+            return;
+          }
+
+          searchCards.innerHTML = filtered.map(function(apt, idx) {
+            var sc = sourceColors[apt.source] || { bg: 'rgba(99,102,241,0.12)', color: '#6366f1', border: 'rgba(99,102,241,0.3)' };
+            var images = [];
+            try { images = JSON.parse(apt.imageUrls || '[]'); } catch(e) {}
+            if (!images.length && apt.imageUrl) images = [apt.imageUrl];
+
+            // Image / media section
+            var mediaHtml;
+            if (images.length > 0) {
+              var counterHtml = images.length > 1
+                ? '<span class="s-card-counter">\ud83d\uddbc\ufe0f 1\u2009/\u2009'+images.length+'</span>'
+                : '';
+              mediaHtml = '<div class="s-card-media">' +
+                '<img src="'+escH(images[0])+'" onerror="this.parentNode.innerHTML=\'<div class=\\\"s-card-no-img\\\">\ud83c\udfe0</div>\'" loading="lazy">' +
+                '<span class="s-card-source-badge" style="background:'+sc.bg+';color:'+sc.color+';border:1px solid '+sc.border+';">'+escH(apt.source)+'</span>' +
+                '<span class="s-card-fav" title="Merken" onclick="event.stopPropagation()">\u2665</span>' +
+                counterHtml +
+              '</div>';
+            } else {
+              mediaHtml = '<div class="s-card-media">' +
+                '<div class="s-card-no-img">\ud83c\udfe0</div>' +
+                '<span class="s-card-source-badge" style="background:'+sc.bg+';color:'+sc.color+';border:1px solid '+sc.border+';">'+escH(apt.source)+'</span>' +
+              '</div>';
+            }
+
+            // Price row
+            var priceLabel = apt.priceType || 'Kaltmiete';
+            var priceHtml = '<div class="s-card-price-row">' +
+              '<span class="s-card-price">'+(apt.price ? apt.price+'\u2009\u20ac' : '\u2014')+'</span>' +
+              '<span class="s-card-price-type">'+escH(priceLabel)+'</span>' +
+            '</div>';
+
+            // Details: rooms · size
+            var detailParts = [];
+            if (apt.rooms) detailParts.push(apt.rooms+' Zimmer');
+            if (apt.size)  detailParts.push(apt.size+'\u2009m\u00b2');
+            var detailsHtml = detailParts.length
+              ? '<div class="s-card-details">'+detailParts.join('<span class="s-card-details-sep"> \u00b7 </span>')+'</div>'
+              : '';
+
+            // Location
+            var locHtml = '<div class="s-card-location">' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;opacity:.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
+              escH(apt.address || apt.area || '') +
+            '</div>';
+
+            // Feature tags
+            var feats = [];
+            if (apt.noCommission) feats.push(t('noCommission'));
+            if (apt.furnished)    feats.push(t('furnished'));
+            if (apt.hasBalcony)   feats.push(t('hasBalcony'));
+            if (apt.hasGarden)    feats.push(t('hasGarden'));
+            if (apt.hasParking)   feats.push(t('hasParking'));
+            var featsHtml = feats.length
+              ? '<div class="s-card-features">'+feats.map(function(f){return '<span class="s-card-feat">\u2714\ufe0e '+f+'</span>';}).join('')+'</div>'
+              : '';
+
+            return '<div class="s-card" data-search-idx="'+idx+'">' +
+              mediaHtml +
+              '<div class="s-card-body">' +
+                priceHtml +
+                '<div class="s-card-title">'+escH(apt.title)+'</div>' +
+                detailsHtml +
+                locHtml +
+                featsHtml +
+              '</div>' +
+            '</div>';
+          }).join('');
+
+          // Attach click handlers
+          searchCards.querySelectorAll('.s-card').forEach(function(card) {
+            card.addEventListener('click', function(e) {
+              if (e.target.closest('a')) return;
+              var idx = parseInt(card.dataset.searchIdx);
+              var filtered2 = activeSourceFilter === 'all'
+                ? currentSearchData
+                : currentSearchData.filter(function(a) { return a.source === activeSourceFilter; });
+              var apt = filtered2[idx];
+              if (apt && window.openAptDetail) window.openAptDetail(apt);
+            });
+          });
+        }
+
+        // Back button
+        searchBack.addEventListener('click', function() {
+          searchResults.classList.remove('active');
+          monitorBar.style.display = '';
+          rootEl.style.display = '';
+          cityInput.value = '';
+          currentSearchData = [];
+        });
+      })();
+    </script>
+
+    <!-- ==================== Page-load Update Notifier ==================== -->
+    <script>
+      (function() {
+        var banner = document.getElementById('update-banner');
+        var itemsEl = document.getElementById('update-banner-items');
+        var closeBtn = document.getElementById('update-banner-close');
+
+        if (closeBtn) closeBtn.addEventListener('click', function() {
+          banner.classList.remove('active', 'no-update');
+        });
+
+        function getMyAreas() {
+          try {
+            var s = localStorage.getItem('myAreas');
+            if (s) { var a = JSON.parse(s); if (Array.isArray(a) && a.length > 0) return a; }
+          } catch(e) {}
+          return ['Buxtehude', 'Neukloster', 'Neu Wulmstorf'];
+        }
+        var DEFAULT_AREAS = ['Buxtehude', 'Neukloster', 'Neu Wulmstorf'];
+
+        // Only check cities that the user added themselves (non-default)
+        var customCities = getMyAreas().filter(function(a) {
+          return DEFAULT_AREAS.indexOf(a) === -1;
+        });
+        if (customCities.length === 0) return; // Nothing to notify about
+
+        // Fetch cache counts (quick, no scraping)
+        setTimeout(function() {
+          fetch('/api/search-cache-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cities: customCities })
+          }).then(function(r) { return r.json(); }).then(function(counts) {
+            var updates = [];
+            var LAST_KEY_PREFIX = 'cityLastCount_';
+            Object.keys(counts).forEach(function(city) {
+              var current = counts[city];
+              if (current === null) return; // No cache yet
+              var last = parseInt(localStorage.getItem(LAST_KEY_PREFIX + city) || '-1', 10);
+              var diff = (last === -1) ? 0 : (current - last);
+              updates.push({ city: city, current: current, diff: diff, fresh: last === -1 });
+              // Update stored count
+              localStorage.setItem(LAST_KEY_PREFIX + city, current);
+            });
+
+            if (updates.length === 0) return;
+
+            var newUpdates = updates.filter(function(u) { return u.diff > 0; });
+            var chips = '';
+
+            if (newUpdates.length > 0) {
+              banner.classList.remove('no-update');
+              newUpdates.forEach(function(u) {
+                chips += '<span class="update-banner-chip" data-city="' + escapeHtml(u.city) + '">'
+                  + '🏠 ' + escapeHtml(u.city) + ': <strong>+' + u.diff + ' neu</strong>'
+                  + '</span>';
+              });
+              itemsEl.innerHTML = '<span style="margin-right:8px;">🔔</span>' + chips;
+            } else {
+              // All cities, no new results
+              banner.classList.add('no-update');
+              var names = updates.map(function(u) { return u.city + ' (' + u.current + ')'; }).join(', ');
+              itemsEl.innerHTML = '✓ Keine neuen Wohnungen — ' + names;
+              // Auto-dismiss after 4 seconds
+              setTimeout(function() { banner.classList.remove('active', 'no-update'); }, 4000);
+            }
+
+            banner.classList.add('active');
+
+            // Clicking a chip triggers live search for that city
+            itemsEl.querySelectorAll('.update-banner-chip').forEach(function(chip) {
+              chip.addEventListener('click', function() {
+                var city = chip.dataset.city;
+                if (window.doCitySearch) window.doCitySearch(city);
+                banner.classList.remove('active', 'no-update');
+              });
+            });
+          }).catch(function() {});
+        }, 2000); // 2 second delay after page load
+
+        function escapeHtml(s) {
+          var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+        }
+      })();
+    </script>
+  </body>
 </html>
