@@ -4,6 +4,7 @@ const cron = require("node-cron");
 const db = require("./db");
 const { scrapeAll, scrapeCity, fetchKleinanzeigenDate } = require("./scraper");
 const telegram = require("./telegram");
+const imageCache = require("./imageCache");
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -12,6 +13,9 @@ const PORT = process.env.PORT || 3005;
 let isFirstFetch = true;
 
 app.use(express.json());
+
+// Serve locally cached apartment images
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Serve static files (the React frontend)
 app.use(express.static(__dirname, { index: "index.html" }));
@@ -198,6 +202,24 @@ app.post("/api/user/save", (req, res) => {
   }
 });
 
+// Save search-result favourites (Hamburg etc.) linked to a user email
+app.post("/api/user/search-favs", (req, res) => {
+  try {
+    const { email, favs } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: "إيميل غير صالح" });
+    }
+    if (typeof favs !== 'object' || Array.isArray(favs)) {
+      return res.status(400).json({ error: "Invalid favs" });
+    }
+    db.saveSearchFavs(email, favs);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error saving search favs:", err);
+    res.status(500).json({ error: "فشل الحفظ" });
+  }
+});
+
 // Get Telegram notification settings
 app.get("/api/settings/telegram-areas", (_req, res) => {
   const saved = db.getSetting('telegramAreas');
@@ -353,6 +375,12 @@ async function runFetch() {
     `📊 Fetch result: ${totalFound} found, ${newCount} new apartments added\n`
   );
 
+  // Kick off background image processing (non-blocking)
+  setImmediate(() => {
+    imageCache.cacheExistingImages(db).catch(e => console.error('cacheExistingImages error:', e.message));
+    imageCache.processListingsImages(db).catch(e => console.error('processListingsImages error:', e.message));
+  });
+
   return { newCount, totalFound };
 }
 
@@ -421,6 +449,12 @@ async function start() {
   // Initialize database first
   await db.getDb();
   console.log("✅ Database initialized");
+
+  // Cache any existing external image URLs to local disk on startup
+  setImmediate(() => {
+    imageCache.cacheExistingImages(db).catch(e => console.error('startup cacheExistingImages error:', e.message));
+    imageCache.processListingsImages(db).catch(e => console.error('startup processListingsImages error:', e.message));
+  });
 
   // Backfill missing publish dates for existing Kleinanzeigen listings
   const missingDates = db.getKaListingsMissingDate();

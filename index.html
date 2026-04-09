@@ -401,6 +401,7 @@
         box-shadow: 0 1px 4px rgba(0,0,0,0.15);
       }
       .s-card-fav:hover { color: #ef4444; background: #fff; }
+      .s-card-fav.fav-active { color: #ef4444; background: #fff; transform: scale(1.1); }
       /* Bottom-right overlay: image counter */
       .s-card-counter {
         position: absolute; bottom: 10px; right: 10px;
@@ -2540,11 +2541,20 @@
             return;
           }
 
+          // Load persisted search favourites from localStorage
+          var searchFavs = {};
+          try { searchFavs = JSON.parse(localStorage.getItem('searchFavs') || '{}'); } catch(_e) {}
+
           searchCards.innerHTML = filtered.map(function(apt, idx) {
             var sc = sourceColors[apt.source] || { bg: 'rgba(99,102,241,0.12)', color: '#6366f1', border: 'rgba(99,102,241,0.3)' };
             var images = [];
             try { images = JSON.parse(apt.imageUrls || '[]'); } catch(e) {}
             if (!images.length && apt.imageUrl) images = [apt.imageUrl];
+
+            var favKey = escH(apt.externalId || apt.url || String(idx));
+            var isFaved = !!(searchFavs[apt.externalId || apt.url || String(idx)]);
+            var favCls = 's-card-fav' + (isFaved ? ' fav-active' : '');
+            var favBtn = '<span class="'+favCls+'" title="Merken" data-favkey="'+favKey+'" data-searchidx="'+idx+'" onclick="event.stopPropagation();window.toggleSearchFav(this)">\u2665</span>';
 
             // Image / media section
             var mediaHtml;
@@ -2555,13 +2565,14 @@
               mediaHtml = '<div class="s-card-media">' +
                 '<img src="'+escH(images[0])+'" onerror="this.style.display=\'none\'" loading="lazy">' +
                 '<span class="s-card-source-badge" style="background:'+sc.bg+';color:'+sc.color+';border:1px solid '+sc.border+';">'+escH(apt.source)+'</span>' +
-                '<span class="s-card-fav" title="Merken" onclick="event.stopPropagation()">\u2665</span>' +
+                favBtn +
                 counterHtml +
               '</div>';
             } else {
-              mediaHtml = '<div class="s-card-media">' +
+              mediaHtml = '<div class="s-card-media" style="position:relative;">' +
                 '<div class="s-card-no-img">\ud83c\udfe0</div>' +
                 '<span class="s-card-source-badge" style="background:'+sc.bg+';color:'+sc.color+';border:1px solid '+sc.border+';">'+escH(apt.source)+'</span>' +
+                favBtn +
               '</div>';
             }
 
@@ -2622,6 +2633,41 @@
             });
           });
         }
+
+        // Toggle favourite for search-result cards — stored in localStorage and optionally synced to server
+        window.toggleSearchFav = function(el) {
+          var key = el.dataset.favkey;
+          var idx = parseInt(el.dataset.searchidx);
+          if (!key) return;
+
+          var favs = {};
+          try { favs = JSON.parse(localStorage.getItem('searchFavs') || '{}'); } catch(_e) {}
+
+          var decodedKey = key; // favkey was HTML-escaped — decode for storage lookup
+          var div = document.createElement('div'); div.innerHTML = decodedKey; decodedKey = div.textContent;
+
+          if (favs[decodedKey]) {
+            delete favs[decodedKey];
+            el.classList.remove('fav-active');
+          } else {
+            // Store apartment snapshot in favourites
+            var aptData = (currentSearchData && currentSearchData[idx]) ? currentSearchData[idx] : { key: decodedKey };
+            favs[decodedKey] = Object.assign({}, aptData, { savedAt: new Date().toISOString() });
+            el.classList.add('fav-active');
+          }
+
+          try { localStorage.setItem('searchFavs', JSON.stringify(favs)); } catch(_e) {}
+
+          // Sync with server if user is logged in
+          var email = localStorage.getItem('userEmail');
+          if (email) {
+            fetch('/api/user/search-favs', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: email, favs: favs })
+            }).catch(function() {});
+          }
+        };
 
         // Back button
         searchBack.addEventListener('click', function() {

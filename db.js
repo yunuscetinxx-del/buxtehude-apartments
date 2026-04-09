@@ -82,13 +82,17 @@ async function getDb() {
 
   // Image column
   try { db.run("ALTER TABLE apartments ADD COLUMN imageUrl TEXT DEFAULT ''"); } catch (e) {}
-  
+
   // Multiple images column (JSON array)
   try { db.run("ALTER TABLE apartments ADD COLUMN imageUrls TEXT DEFAULT '[]'"); } catch (e) {}
-  
+
   // Price type column (Warmmiete / Kaltmiete)
   try { db.run("ALTER TABLE apartments ADD COLUMN priceType TEXT DEFAULT ''"); } catch (e) {}
 
+  // imageAttempted column: track listings where we already tried fetching images
+  try { db.run("ALTER TABLE apartments ADD COLUMN imageAttempted INTEGER DEFAULT 0"); } catch (e) {}
+
+  saveDb();
   // One-time fix: restore all platform-deleted apartments and reset missedCount
   // (old threshold of 6 was too aggressive, causing valid listings to disappear)
   const platformDeleted = db.exec("SELECT COUNT(*) FROM apartments WHERE isDeleted = 1 AND deletedBy = 'platform'");
@@ -401,8 +405,7 @@ function getSearchCache(city) {
 }
 
 // Returns all cities that have ever been searched (for auto-refresh)
-function getCachedCities() {
-  if (!db) return [];
+function getCachedCities() {  if (!db) return [];
   try {
     const stmt = db.prepare('SELECT city FROM search_cache ORDER BY cachedAt DESC');
     const cities = [];
@@ -431,6 +434,68 @@ function saveSearchCache(city, apartments) {
   }
 }
 
+// ==================== Image caching helpers ====================
+
+/** Listings with no imageUrl and not yet attempted — candidate for detail-page image fetch. */
+function getListingsNeedingImages(limit) {
+  limit = limit || 40;
+  return queryAll(
+    "SELECT id, externalId, url, source FROM apartments WHERE isDeleted = 0 AND (imageUrl IS NULL OR imageUrl = '') AND imageAttempted = 0 ORDER BY addedAt DESC LIMIT ?",
+    [limit]
+  );
+}
+
+/** Listings whose primary imageUrl is still an external http:// URL — needs local caching. */
+function getListingsWithExternalImages(limit) {
+  limit = limit || 80;
+  return queryAll(
+    "SELECT id, externalId, imageUrl, imageUrls FROM apartments WHERE isDeleted = 0 AND imageUrl LIKE 'http%' LIMIT ?",
+    [limit]
+  );
+}
+
+/** Update both image fields for a listing. */
+function updateImageUrls(id, imageUrl, imageUrls) {
+  db.run(
+    "UPDATE apartments SET imageUrl = ?, imageUrls = ? WHERE id = ?",
+    [imageUrl || '', imageUrls || '[]', id]
+  );
+  saveDb();
+}
+
+/** Mark that we already tried to get images for this listing (avoids repeated attempts). */
+function markImageAttempted(id) {
+  db.run("UPDATE apartments SET imageAttempted = 1 WHERE id = ?", [id]);
+  saveDb();
+}
+
+// ==================== Search-result favourites per user ====================
+
+/**
+ * Save the user's search-result favourites (from Hamburg etc.) into their backup record.
+ * Merges with existing backup data so regular apartment preferences are preserved.
+ */
+function saveSearchFavs(email, favs) {
+  if (!email) return;
+  try {
+    const stmt = db.prepare("SELECT data FROM user_backups WHERE email = ?");
+    stmt.bind([email]);
+    let existing = {};
+    if (stmt.step()) {
+      try { existing = JSON.parse(stmt.getAsObject().data || '{}'); } catch (_e) {}
+    }
+    stmt.free();
+    existing.searchFavs = favs;
+    db.run(
+      "INSERT OR REPLACE INTO user_backups (email, data, updatedAt) VALUES (?, ?, datetime('now'))",
+      [email, JSON.stringify(existing)]
+    );
+    saveDb();
+  } catch (e) {
+    console.error('saveSearchFavs error:', e.message);
+  }
+}
+
 module.exports = {
   getDb,
   getAllApartments,
@@ -456,4 +521,9 @@ module.exports = {
   getSearchCache,
   saveSearchCache,
   getCachedCities,
+  getListingsNeedingImages,
+  getListingsWithExternalImages,
+  updateImageUrls,
+  markImageAttempted,
+  saveSearchFavs,
 };

@@ -337,11 +337,15 @@ async function scrapeKleinanzeigen(customAreas) {
 
           const detectedArea = _detectArea(address + ' ' + title) || area.name;
 
-          // Extract images
+          // Extract images — KA uses data-imgsrc for lazy-loaded thumbnails
           const images = [];
-          $el.find(".aditem-image img, .imagebox img, img").each((_, img) => {
-            const src = $el.find(img).attr("src") || $el.find(img).attr("data-src") || "";
-            if (src.startsWith("http") && !images.includes(src)) images.push(src);
+          $el.find(".aditem-image img, .imagebox img, img[data-imgsrc], img").each((_, img) => {
+            const $img = $el.find(img);
+            const src = $img.attr("data-imgsrc") || $img.attr("data-src") || $img.attr("src") || "";
+            if (!src.startsWith("http")) return;
+            // Upgrade to a larger variant if possible
+            const big = src.replace(/rule=[^&"'\s]+/, 'rule=adimage-750x562-jpg');
+            if (!images.includes(big)) images.push(big);
           });
 
           results.push({
@@ -402,9 +406,12 @@ async function scrapeKleinanzeigen(customAreas) {
             const roomsMatch = descText.match(/([\d,]+)\s*(?:zimmer|zi\.?|räume)/i);
             const sizeMatch = descText.match(/([\d,]+)\s*m²/i);
             const images = [];
-            $el.find(".aditem-image img,.imagebox img,img").each((_, img) => {
-              const src = $kw(img).attr("src") || $kw(img).attr("data-src") || "";
-              if (src.startsWith("http") && !images.includes(src)) images.push(src);
+            $el.find(".aditem-image img,.imagebox img,img[data-imgsrc],img").each((_, img) => {
+              const $img = $kw(img);
+              const src = $img.attr("data-imgsrc") || $img.attr("data-src") || $img.attr("src") || "";
+              if (!src.startsWith("http")) return;
+              const big = src.replace(/rule=[^&"'\s]+/, 'rule=adimage-750x562-jpg');
+              if (!images.includes(big)) images.push(big);
             });
             results.push({
               externalId: `kleinanzeigen-${id}`,
