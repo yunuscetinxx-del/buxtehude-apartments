@@ -403,22 +403,10 @@
       .s-card-fav:hover { color: #ef4444; background: #fff; }
       .s-card-fav.fav-active { color: #ef4444; background: #fff; transform: scale(1.1); }
 
-      /* Injected heart button on React apartment cards */
-      .react-card-fav {
-        position: absolute; top: 10px; right: 10px;
-        width: 32px; height: 32px;
-        background: rgba(255,255,255,0.88);
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 16px; color: #9ca3af;
-        cursor: pointer;
-        transition: color 0.2s, background 0.2s, transform 0.15s;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-        z-index: 2;
-        user-select: none;
-      }
-      .react-card-fav:hover { color: #ef4444; background: #fff; }
-      .react-card-fav.react-card-fav-active { color: #ef4444; background: #fff; transform: scale(1.12); }
+      /* 4-column grid for Buxtehude React cards */
+      #root .grid.lg\:grid-cols-3 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+      @media (max-width: 1024px) { #root .grid.lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; } }
+      @media (max-width: 640px)  { #root .grid.lg\:grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
       /* Bottom-right overlay: image counter */
       .s-card-counter {
         position: absolute; bottom: 10px; right: 10px;
@@ -2351,74 +2339,82 @@
         function injectCardImage(card, apt) {
           if (card.dataset.imgInjected) return;
           card.dataset.imgInjected = '1';
+          delete card.dataset.cardClickBound; // will rebind after innerHTML rebuild
 
           var images = [];
           try { images = JSON.parse(apt.imageUrls || '[]'); } catch(e) {}
           if (!images.length && apt.imageUrl) images = [apt.imageUrl];
-          // Remove placeholder/icon-only images
           images = images.filter(function(u) { return u && (u.startsWith('http') || u.startsWith('/images/')); });
 
-          // Adjust card: remove top/left/right padding, clip overflow for rounded corners
-          card.style.paddingTop = '0';
-          card.style.paddingLeft = '0';
-          card.style.paddingRight = '0';
-          card.style.overflow = 'hidden';
-
-          // Wrap existing children in a padded body div (preserves React button layout)
-          var bodyWrap = document.createElement('div');
-          bodyWrap.style.cssText = 'padding: 0 16px 4px; flex:1; min-width:0;';
-          while (card.firstChild) bodyWrap.appendChild(card.firstChild);
-
-          var srcColors = {
-            'Kleinanzeigen':'#2dd4bf','Immowelt':'#a78bfa','markt.de':'#fb7185',
-            'Wohnungsb\u00f6rse':'#818cf8','Immonet':'#f472b6'
+          var srcMap = {
+            'Kleinanzeigen': { bg: '#0d948822', color: '#2dd4bf', border: '#0d948833' },
+            'Immowelt':      { bg: '#7c3aed22', color: '#a78bfa', border: '#7c3aed33' },
+            'markt.de':      { bg: '#e1195822', color: '#fb7185', border: '#e1195833' },
+            'Wohnungsb\u00f6rse': { bg: '#4f46e522', color: '#818cf8', border: '#4f46e533' },
+            'Immonet':       { bg: '#db277722', color: '#f472b6', border: '#db277733' }
           };
-          var srcColor = srcColors[apt.source] || '#6366f1';
-          var srcBg = (apt.source === 'Kleinanzeigen') ? 'rgba(13,148,136,0.18)' :
-                      (apt.source === 'Immowelt') ? 'rgba(124,58,237,0.18)' :
-                      (apt.source === 'markt.de') ? 'rgba(225,25,88,0.18)' :
-                      (apt.source === 'Wohnungsb\u00f6rse') ? 'rgba(79,70,229,0.18)' : 'rgba(99,102,241,0.18)';
+          var sc = srcMap[apt.source] || { bg: 'rgba(99,102,241,0.12)', color: '#6366f1', border: 'rgba(99,102,241,0.3)' };
 
+          var favCls = 's-card-fav' + (apt.isFavorite ? ' fav-active' : '');
+          var favBtn = '<span class="'+favCls+'" data-apt-id="'+apt.id+'" title="Merken" ' +
+            'onclick="event.stopPropagation();window.toggleReactFav(this,event)">&#9829;</span>';
+
+          var mediaHtml;
           if (images.length > 0) {
-            var counterBadge = images.length > 1
-              ? '<span style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;pointer-events:none;">' +
-                '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:2px"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>' +
-                '1 / ' + images.length + '</span>'
+            var counterHtml = images.length > 1
+              ? '<span class="s-card-counter">\ud83d\uddbc\ufe0f 1\u2009/\u2009'+images.length+'</span>'
               : '';
-            var favCls = 'react-card-fav' + (apt.isFavorite ? ' react-card-fav-active' : '');
-            var imgBlock = document.createElement('div');
-            imgBlock.style.cssText = 'position:relative;width:100%;height:185px;overflow:hidden;flex-shrink:0;cursor:pointer;';
-            imgBlock.innerHTML =
-              '<img src="' + escH(images[0]) + '" data-images="' + escH(JSON.stringify(images)) + '" ' +
-                'style="width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s ease;" ' +
-                'onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">' +
-              '<div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:var(--bg-secondary);font-size:40px;">🏠</div>' +
-              '<span style="position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + srcBg + ';color:' + srcColor + ';border:1px solid ' + srcColor + '33;pointer-events:none;">' + escH(apt.source) + '</span>' +
-              '<span class="' + favCls + '" data-apt-id="' + apt.id + '" title="Merken" onclick="event.stopPropagation();window.toggleReactFav(this,event)">&#9829;</span>' +
-              counterBadge;
-            // Hover zoom on image
-            imgBlock.addEventListener('mouseenter', function() {
-              var img = imgBlock.querySelector('img');
-              if (img) img.style.transform = 'scale(1.04)';
-            });
-            imgBlock.addEventListener('mouseleave', function() {
-              var img = imgBlock.querySelector('img');
-              if (img) img.style.transform = '';
-            });
-            card.appendChild(imgBlock);
+            mediaHtml = '<div class="s-card-media">' +
+              '<img src="'+escH(images[0])+'" onerror="this.style.display=\'none\'" loading="lazy">' +
+              '<span class="s-card-source-badge" style="background:'+sc.bg+';color:'+sc.color+';border:1px solid '+sc.border+';">'+escH(apt.source)+'</span>' +
+              favBtn + counterHtml +
+            '</div>';
           } else {
-            // No image placeholder with source badge + fav
-            var noImgBlock = document.createElement('div');
-            var favCls2 = 'react-card-fav' + (apt.isFavorite ? ' react-card-fav-active' : '');
-            noImgBlock.style.cssText = 'position:relative;width:100%;height:100px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);';
-            noImgBlock.innerHTML =
-              '<span style="font-size:36px;opacity:0.35;">🏠</span>' +
-              '<span style="position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + srcBg + ';color:' + srcColor + ';border:1px solid ' + srcColor + '33;pointer-events:none;">' + escH(apt.source) + '</span>' +
-              '<span class="' + favCls2 + '" data-apt-id="' + apt.id + '" title="Merken" onclick="event.stopPropagation();window.toggleReactFav(this,event)">&#9829;</span>';
-            card.appendChild(noImgBlock);
+            mediaHtml = '<div class="s-card-media">' +
+              '<div class="s-card-no-img">\ud83c\udfe0</div>' +
+              '<span class="s-card-source-badge" style="background:'+sc.bg+';color:'+sc.color+';border:1px solid '+sc.border+';">'+escH(apt.source)+'</span>' +
+              favBtn +
+            '</div>';
           }
 
-          card.appendChild(bodyWrap);
+          var priceLabel = apt.priceType || 'Kaltmiete';
+          var priceHtml = '<div class="s-card-price-row">' +
+            '<span class="s-card-price">'+(apt.price ? apt.price+'\u2009\u20ac' : '\u2014')+'</span>' +
+            '<span class="s-card-price-type">'+escH(priceLabel)+'</span>' +
+          '</div>';
+
+          var detailParts = [];
+          if (apt.size)  detailParts.push(apt.size+'\u2009m\u00b2');
+          if (apt.rooms) detailParts.push(apt.rooms+' Zimmer');
+          var detailsHtml = detailParts.length
+            ? '<div class="s-card-details">'+detailParts.join('<span class="s-card-details-sep"> \u00b7 </span>')+'</div>'
+            : '';
+
+          var locHtml = '<div class="s-card-location">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;opacity:.8">' +
+            '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
+            escH(apt.address || apt.area || '') +
+          '</div>';
+
+          var feats = [];
+          if (apt.noCommission) feats.push('\u2714\ufe0e Ohne Provision');
+          if (apt.furnished)    feats.push('\u2714\ufe0e M\u00f6bliert');
+          if (apt.hasBalcony)   feats.push('\u2714\ufe0e Balkon');
+          if (apt.hasGarden)    feats.push('\u2714\ufe0e Garten');
+          if (apt.hasParking)   feats.push('\u2714\ufe0e Parkplatz');
+          var featsHtml = feats.length
+            ? '<div class="s-card-features">'+feats.map(function(f){return '<span class="s-card-feat">'+f+'</span>';}).join('')+'</div>'
+            : '';
+
+          // Replace React card entirely with s-card structure
+          card.className = 's-card';
+          card.innerHTML =
+            mediaHtml +
+            '<div class="s-card-body">' +
+              priceHtml +
+              '<div class="s-card-title">'+escH(apt.title)+'</div>' +
+              detailsHtml + locHtml + featsHtml +
+            '</div>';
         }
 
         // Toggle favourite from the injected heart button on React cards
@@ -2426,8 +2422,7 @@
           if (evt) evt.stopPropagation();
           var id = parseInt(el.dataset.aptId);
           if (!id) return;
-          // Optimistic UI
-          el.classList.toggle('react-card-fav-active');
+          el.classList.toggle('fav-active');
           fetch('/api/apartments/' + id + '/favorite', {
             method: 'PATCH',
             headers: (function() {
@@ -2440,9 +2435,9 @@
             // Sync aptCache
             var cached = aptCache.find(function(a) { return a.id === id; });
             if (cached) cached.isFavorite = updated.isFavorite;
-            el.classList.toggle('react-card-fav-active', !!updated.isFavorite);
+            el.classList.toggle('fav-active', !!updated.isFavorite);
           }).catch(function() {
-            el.classList.toggle('react-card-fav-active'); // revert
+            el.classList.toggle('fav-active'); // revert
           });
         };
 
