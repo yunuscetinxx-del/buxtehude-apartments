@@ -763,8 +763,9 @@
       }
 
       /* ==================== Light Mode React Override ==================== */
-      html.light #root { filter: invert(1) hue-rotate(180deg); }
-      html.light #root img, html.light #root video { filter: invert(1) hue-rotate(180deg); }
+      /* Light mode uses CSS variables from assets/index-iiVQX1qG.css :root {} block */
+      /* No filter hack needed - .dark class removal triggers correct :root vars */
+      html.light { color-scheme: light; }
 
       /* Clickable apartment cards */
       [data-testid^="card-apartment-"] { cursor: pointer !important; }
@@ -2395,7 +2396,7 @@
                 ? '<span class="s-card-counter">\ud83d\uddbc\ufe0f 1\u2009/\u2009'+images.length+'</span>'
                 : '';
               mediaHtml = '<div class="s-card-media">' +
-                '<img src="'+escH(images[0])+'" onerror="this.parentNode.innerHTML=\'<div class=\\\"s-card-no-img\\\">\ud83c\udfe0</div>\'" loading="lazy">' +
+                '<img src="'+escH(images[0])+'" onerror="this.style.display=\'none\'" loading="lazy">' +
                 '<span class="s-card-source-badge" style="background:'+sc.bg+';color:'+sc.color+';border:1px solid '+sc.border+';">'+escH(apt.source)+'</span>' +
                 '<span class="s-card-fav" title="Merken" onclick="event.stopPropagation()">\u2665</span>' +
                 counterHtml +
