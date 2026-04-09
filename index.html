@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" dir="ltr" class="dark">
+<html lang="de" dir="ltr" class="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
@@ -208,6 +208,7 @@
         color: var(--text-primary);
       }
       .nav-btn.active { background: var(--accent); color: #fff; }
+      .nav-btn-icon { padding: 7px 10px; }
 
       /* Semantic colour variants */
       .nav-btn-green {
@@ -1297,16 +1298,29 @@
       </div>
       <div class="city-search-wrapper">
         <input type="text" id="city-input" data-i18n-placeholder="searchPlaceholder" placeholder="Stadt suchen..." autocomplete="off" />
-        <button id="city-search-btn" title="Search">🔍</button>
+        <button id="city-search-btn" title="Search"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
         <div id="city-dropdown" class="city-dropdown"></div>
       </div>
       <div class="nav-divider"></div>
       <div class="nav-actions">
-        <button id="lang-toggle" class="nav-btn">العربية</button>
-        <button id="theme-toggle" class="nav-btn">☀️</button>
-        <button id="mark-seen-btn" class="nav-btn nav-btn-green" data-i18n="markSeen">👁 Gesehen</button>
-        <button id="login-btn" class="nav-btn nav-btn-blue" data-i18n="login">🔑 Login</button>
-        <button id="deleted-btn" class="nav-btn nav-btn-red">🗑️ <span data-i18n="deleted">Gelöschte</span> <span id="deleted-count" class="area-count">0</span></button>
+        <button id="lang-toggle" class="nav-btn nav-btn-icon" title="Sprache wechseln">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20A14.5 14.5 0 0 0 12 2"/><path d="M2 12h20"/></svg>
+          <span>DE / AR</span>
+        </button>
+        <button id="theme-toggle" class="nav-btn nav-btn-icon" title="Darstellung wechseln"></button>
+        <button id="mark-seen-btn" class="nav-btn nav-btn-green">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span data-i18n="markSeen">Gesehen</span>
+        </button>
+        <button id="login-btn" class="nav-btn nav-btn-blue">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span data-i18n="login">Login</span>
+        </button>
+        <button id="deleted-btn" class="nav-btn nav-btn-red">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          <span data-i18n="deleted">Gelöschte</span>
+          <span id="deleted-count" class="area-count">0</span>
+        </button>
       </div>
     </nav>
 
@@ -1320,14 +1334,14 @@
     <div id="monitor-bar">
       <button class="area-btn active" data-area="all" data-i18n="all">Alle</button>
       <!-- dynamic area buttons inserted by JS -->
-      <button id="my-areas-btn" class="area-btn" style="margin-inline-start:auto;border-color:var(--accent);color:var(--accent);" data-i18n="myAreasMgr">⚙️ Meine Gebiete</button>
+      <button id="my-areas-btn" class="area-btn" style="margin-inline-start:auto;border-color:var(--accent);color:var(--accent);display:flex;align-items:center;gap:5px;" data-i18n="myAreasMgr"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Meine Gebiete</button>
     </div>
 
     <!-- ==================== My Areas Modal ==================== -->
     <div id="my-areas-overlay">
       <div id="my-areas-panel">
         <div class="my-areas-header">
-          <h3 data-i18n="myAreasTitle">📍 Meine Gebiete</h3>
+          <h3 data-i18n="myAreasTitle">Meine Gebiete</h3>
           <button id="close-my-areas" class="modal-close-btn">✕</button>
         </div>
         <p class="my-areas-sub" data-i18n="myAreasSub">Füge deine bevorzugten Gebiete hinzu – sie ersetzen die Standard-Gebiete.</p>
@@ -1413,8 +1427,8 @@
           search: 'Suchen',
           all: 'Alle',
           settings: '\u2699\ufe0f Telegram',
-          markSeen: '\ud83d\udc41 Gesehen',
-          login: '\ud83d\udd11 Login',
+          markSeen: 'Gesehen',
+          login: 'Login',
           deleted: 'Gel\u00f6schte',
           back: '\u2190 Zur\u00fcck',
           results: 'Ergebnisse',
@@ -1460,8 +1474,8 @@
           loggedOut: 'Abgemeldet',
           restored: 'Wiederhergestellt',
           confirmPermDelete: 'Endg\u00fcltig l\u00f6schen - nicht r\u00fcckg\u00e4ngig?',
-          myAreasMgr: '\u2699\ufe0f Meine Gebiete',
-          myAreasTitle: '\ud83d\udccd Meine Gebiete',
+          myAreasMgr: 'Meine Gebiete',
+          myAreasTitle: 'Meine Gebiete',
           myAreasSub: 'F\u00fcge deine bevorzugten Gebiete hinzu \u2013 sie ersetzen die Standard-Gebiete.',
           myAreasInputPlaceholder: 'Gebiet eingeben...',
           myAreasAdd: '\uff0b Hinzuf\u00fcgen',
@@ -1473,8 +1487,8 @@
           search: '\u0628\u062d\u062b',
           all: '\u0627\u0644\u0643\u0644',
           settings: '\u2699\ufe0f \u062a\u0644\u063a\u0631\u0627\u0645',
-          markSeen: '\ud83d\udc41 \u0627\u0644\u0645\u0634\u0627\u0647\u062f\u0629',
-          login: '\ud83d\udd11 \u062f\u062e\u0648\u0644',
+          markSeen: '\u0627\u0644\u0645\u0634\u0627\u0647\u062f\u0629',
+          login: '\u062f\u062e\u0648\u0644',
           deleted: '\u0627\u0644\u0645\u062d\u0630\u0648\u0641\u0629',
           back: '\u2192 \u0631\u062c\u0648\u0639',
           results: '\u0646\u062a\u0627\u0626\u062c',
@@ -1520,8 +1534,8 @@
           loggedOut: '\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c',
           restored: '\u062a\u0645 \u0627\u0633\u062a\u0631\u062c\u0627\u0639',
           confirmPermDelete: '\u062d\u0630\u0641 \u0646\u0647\u0627\u0626\u064a - \u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0631\u0627\u062c\u0639\u061f',
-          myAreasMgr: '\u2699\ufe0f \u0645\u0646\u0627\u0637\u0642\u064a',
-          myAreasTitle: '\ud83d\udccd \u0645\u0646\u0627\u0637\u0642\u064a \u0627\u0644\u0645\u0641\u0636\u0644\u0629',
+          myAreasMgr: '\u0645\u0646\u0627\u0637\u0642\u064a',
+          myAreasTitle: '\u0645\u0646\u0627\u0637\u0642\u064a \u0627\u0644\u0645\u0641\u0636\u0644\u0629',
           myAreasSub: '\u0623\u0636\u0641 \u0645\u0646\u0627\u0637\u0642\u0643 \u0627\u0644\u0645\u0641\u0636\u0644\u0629 \u2013 \u062a\u0638\u0647\u0631 \u0628\u062f\u0644 \u0627\u0644\u0645\u0646\u0627\u0637\u0642 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629.',
           myAreasInputPlaceholder: '\u0627\u0643\u062a\u0628 \u0627\u0633\u0645 \u0645\u0646\u0637\u0642\u0629...',
           myAreasAdd: '\uff0b \u0625\u0636\u0627\u0641\u0629',
@@ -1544,24 +1558,31 @@
           var val = t(key);
           if (val) el.placeholder = val;
         });
-        // Update lang toggle button text
+        // Update lang toggle button text (preserve SVG icon)
         var langBtn = document.getElementById('lang-toggle');
-        if (langBtn) langBtn.textContent = lang === 'de' ? '\u0627\u0644\u0639\u0631\u0628\u064a\u0629' : 'Deutsch';
+        if (langBtn) {
+          var langSpan = langBtn.querySelector('span');
+          var langLabel = lang === 'de' ? '\u0627\u0644\u0639\u0631\u0628\u064a\u0629' : 'Deutsch';
+          if (langSpan) langSpan.textContent = langLabel; else langBtn.textContent = langLabel;
+        }
       }
     </script>
 
     <!-- ==================== Theme & Language Toggle ==================== -->
     <script>
       (function() {
+        // SVG icons
+        var svgSun = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+        var svgMoon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
         // Theme toggle
         var themeBtn = document.getElementById('theme-toggle');
         function updateThemeBtn() {
-          var theme = localStorage.getItem('theme') || 'dark';
-          themeBtn.textContent = theme === 'dark' ? '\u2600\ufe0f' : '\ud83c\udf19';
+          var theme = localStorage.getItem('theme') || 'light';
+          themeBtn.innerHTML = theme === 'dark' ? svgSun : svgMoon;
         }
         updateThemeBtn();
         themeBtn.addEventListener('click', function() {
-          var current = localStorage.getItem('theme') || 'dark';
+          var current = localStorage.getItem('theme') || 'light';
           var next = current === 'dark' ? 'light' : 'dark';
           localStorage.setItem('theme', next);
           document.documentElement.classList.remove('dark', 'light');
