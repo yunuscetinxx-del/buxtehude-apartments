@@ -593,9 +593,48 @@
       /* Gallery */
       .adm-gallery {
         position: relative; width: 100%; height: 340px; min-height: 180px;
-        overflow: hidden; flex-shrink: 0; background: #0a0a0a;
+        overflow: hidden; flex-shrink: 0;
+        background: #111;
       }
-      .adm-gallery img { width: 100%; height: 340px; object-fit: cover; display: block; cursor: zoom-in; }
+      .adm-gallery img {
+        width: 100%; height: 340px;
+        object-fit: contain;
+        display: block;
+        cursor: zoom-in;
+        transition: opacity 0.18s ease;
+      }
+      .adm-gallery img.fading { opacity: 0; }
+      /* Thumbnail strip */
+      .adm-thumbs {
+        display: flex;
+        gap: 6px;
+        padding: 8px 10px;
+        overflow-x: auto;
+        background: var(--bg-secondary);
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) transparent;
+        flex-shrink: 0;
+      }
+      .adm-thumbs::-webkit-scrollbar { height: 4px; }
+      .adm-thumbs::-webkit-scrollbar-track { background: transparent; }
+      .adm-thumbs::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+      .adm-thumb {
+        flex-shrink: 0;
+        width: 72px; height: 52px;
+        border-radius: 6px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 0.15s;
+        background: #111;
+      }
+      .adm-thumb.active { border-color: var(--accent); }
+      .adm-thumb img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: none;
+      }
       .adm-gallery-btn {
         position: absolute; top: 50%; transform: translateY(-50%);
         background: rgba(0,0,0,0.55); border: none;
@@ -1108,6 +1147,7 @@
         }
         /* Gallery shorter on mobile */
         .adm-gallery, .adm-gallery img { height: 210px; }
+        .adm-thumb { width: 58px; height: 42px; }
         /* Stack columns on mobile */
         .adm-layout { grid-template-columns: 1fr; }
         .adm-sidebar { border-left: none; border-top: 1px solid var(--border-color); }
@@ -2033,11 +2073,21 @@
             var viewAllPill = images.length > 1
               ? '<div class="adm-img-count-pill" onclick="openLightbox()">\ud83d\uddbc\ufe0f Alle '+images.length+' Bilder ansehen</div>'
               : '';
+            // Thumbnail strip
+            var thumbsHtml = images.length > 1
+              ? '<div class="adm-thumbs" id="adm-thumbs">' +
+                  images.map(function(url, i) {
+                    return '<div class="adm-thumb'+(i===0?' active':'')+'" data-idx="'+i+'" onclick="admGallery('+i+', true)">' +
+                      '<img src="'+escH(url)+'" loading="lazy" onerror="this.parentNode.style.display=\'none\'">' +
+                    '</div>';
+                  }).join('') +
+                '</div>'
+              : '';
             galleryHtml = '<div class="adm-gallery" id="adm-gallery" data-idx="0">' +
               '<img id="adm-gallery-img" src="'+escH(images[0])+'" onclick="openLightbox()" onerror="this.style.display=\'none\'">' +
               navBtns + viewAllPill +
               '<button class="adm-close" onclick="closeAptDetail()">\u2715</button>' +
-            '</div>';
+            '</div>' + thumbsHtml;
           } else {
             galleryHtml = '<div style="position:relative;">' +
               '<div class="adm-no-img">\ud83c\udfe0</div>' +
@@ -2174,17 +2224,34 @@
           window._admImages = [];
         };
 
-        window.admGallery = function(dir) {
+        window.admGallery = function(dir, absolute) {
           var imgs = window._admImages || [];
           if (imgs.length <= 1) return;
           var gallery = document.getElementById('adm-gallery');
-          var idx = parseInt(gallery.dataset.idx || '0') + dir;
-          if (idx < 0) idx = imgs.length - 1;
-          if (idx >= imgs.length) idx = 0;
+          var idx;
+          if (absolute) {
+            idx = dir;
+          } else {
+            idx = parseInt(gallery.dataset.idx || '0') + dir;
+            if (idx < 0) idx = imgs.length - 1;
+            if (idx >= imgs.length) idx = 0;
+          }
           gallery.dataset.idx = idx;
-          document.getElementById('adm-gallery-img').src = imgs[idx];
+          // Fade transition
+          var imgEl = document.getElementById('adm-gallery-img');
+          imgEl.classList.add('fading');
+          setTimeout(function() {
+            imgEl.src = imgs[idx];
+            imgEl.classList.remove('fading');
+          }, 80);
+          // Counter
           var counter = document.getElementById('adm-img-idx');
           if (counter) counter.textContent = idx + 1;
+          // Thumbnail active state
+          var thumbs = document.querySelectorAll('#adm-thumbs .adm-thumb');
+          thumbs.forEach(function(t, i) { t.classList.toggle('active', i === idx); });
+          // Scroll active thumb into view
+          if (thumbs[idx]) thumbs[idx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
         };
 
         window.openLightbox = function() {
@@ -2218,6 +2285,10 @@
             document.getElementById('adm-gallery-img').src = imgs[idx];
             var counter = document.getElementById('adm-img-idx');
             if (counter) counter.textContent = idx + 1;
+            // Sync thumbnails
+            var thumbs = document.querySelectorAll('#adm-thumbs .adm-thumb');
+            thumbs.forEach(function(t, i) { t.classList.toggle('active', i === idx); });
+            if (thumbs[idx]) thumbs[idx].scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
           }
         };
         document.getElementById('img-lightbox').addEventListener('click', function(e) {
