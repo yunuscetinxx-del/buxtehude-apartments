@@ -948,10 +948,22 @@ async function scrapeCity(cityName) {
   // Reset context back to default (Buxtehude)
   resetSearchContext();
 
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n✅ City search complete in ${elapsed}s: ${allResults.length} listings`);
+  // Post-filter: Kleinanzeigen uses a geographic radius so results may include
+  // nearby cities. Keep only listings whose address or title actually mentions
+  // the searched city name.
+  const strictValidator = createCityValidator(cityName);
+  const filtered = allResults.filter(apt =>
+    strictValidator(apt.address || '') || strictValidator(apt.title || '')
+  );
+  const dropped = allResults.length - filtered.length;
+  if (dropped > 0) {
+    console.log(`  🗂 Post-filter: removed ${dropped} off-city listings (kept ${filtered.length})`);
+  }
 
-  return { apartments: allResults, stats: sourceStats };
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`\n✅ City search complete in ${elapsed}s: ${filtered.length} listings`);
+
+  return { apartments: filtered, stats: sourceStats };
 }
 
 module.exports = { scrapeAll, scrapeCity, fetchKleinanzeigenDate };
